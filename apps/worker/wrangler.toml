@@ -1,0 +1,11 @@
+# Top level is the default for `wrangler dev` and mirrors staging, so a bare
+# `wrangler deploy` can never hit production.
+name = "handsift-api-staging"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+
+[env.staging]
+name = "handsift-api-staging"
+
+[env.production]
+name = "handsift-api"
