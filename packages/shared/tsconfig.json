@@ -1,0 +1,8 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // DOM types are needed only for the SiteAdapter interface (exported via "./interfaces").
+    "lib": ["ES2023", "DOM"]
+  },
+  "include": ["src", "vitest.config.ts"]
+}
