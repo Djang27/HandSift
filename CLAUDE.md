@@ -6,7 +6,8 @@
 
 ## How to use this file (for Claude Code)
 
-- Work **one phase at a time**. At the end of each phase: run lint, typecheck, and tests, commit, then stop and give me a short summary of what changed and anything I need to do manually.
+- Work **one phase at a time**. At the end of each phase: run lint, typecheck, and tests, make the final commit, then stop and give me a short summary of what changed and anything I need to do manually.
+- **Commit in small, logical steps as you go** (e.g. one commit per package, module, or feature), not one big commit per phase. Each commit should be coherent on its own and have a clear message.
 - Follow the **Code Architecture Rules** below strictly. If a change would break a rule, stop and ask instead of working around it.
 - Ask before adding any dependency not listed in the Tech Stack section.
 - Never guess Etsy API response shapes. Base every schema and type on the saved JSON fixtures in `fixtures/`.
@@ -140,10 +141,13 @@ Service worker (entrypoint)
             ▼
 Cloudflare Worker
   - holds Etsy API key as a secret
-  - GET /listings?ids=...  -> batched Etsy lookup
-  - GET /shops/:shopId     -> Etsy shop lookup
+  - GET /v1/listings?ids=...  -> batched Etsy lookup
+  - GET /v1/shops/:shopId     -> Etsy shop lookup
+  - GET /health               -> unversioned liveness check (smoke tests)
   - cache layer: Cache API -> D1 (Phase 10) -> Etsy
-  - rate limiting, input validation, origin check
+  - per-IP rate limiting (primary abuse defense), input validation,
+    origin check (filters casual misuse only, NOT a security boundary)
+  - structured JSON logs (Workers Logs)
             │
             ▼
 Etsy Open API v3
@@ -205,6 +209,7 @@ apps/
         rateLimit.ts
         validate.ts
         origin.ts
+      log.ts                     # structured JSON logger
       cron/
         cleanup.ts               # deletes expired D1 rows (Phase 10)
     migrations/                  # D1 SQL migrations, numbered
@@ -265,11 +270,34 @@ type Verdict = {
 
 The Worker itself scales automatically; the real bottleneck is **Etsy's API quota**, since every user shares one API key. So the design minimizes Etsy calls at every layer:
 
-1. **Client cache (Dexie):** a user never re-fetches a listing they already checked (7-day TTL).
+1. **Client cache (Dexie):** a user never re-fetches a listing they already checked (7-day TTL, subject to Etsy's data-storage terms, verified in Phase 1).
 2. **Batching:** one Worker request per batch of visible listings, not per listing.
 3. **Worker edge cache (Cache API):** repeated lookups served without hitting Etsy. Note: this cache is per Cloudflare data center, not global.
 4. **Shared global cache (Phase 10, D1):** once one user checks a listing or shop, every user gets it free. Lookup order is Cache API (fastest, per data center) -> D1 (global) -> Etsy. D1 stores **raw Etsy data, not verdicts**, so tuning scoring never requires refetching, and no user data is ever stored.
 5. **Graceful degradation:** if Etsy returns 429, the Worker returns a clear "rate limited" response and the extension shows nothing new (cached verdicts still display). Never a wrong badge.
+
+---
+
+## Security, versioning, and observability
+
+### Abuse model: the Worker is a public endpoint
+- An extension **cannot prove its identity**. The `Origin` header and extension ID are trivially spoofed by any script, so anyone can call the Worker directly and burn the shared Etsy quota.
+- The **origin check is not security**. It only filters casual misuse (random web pages calling the Worker from a browser). Never rely on it for anything.
+- **Per-IP rate limiting is the actual defense and is required**, not optional. Use Cloudflare's Workers Rate Limiting binding (`[[ratelimits]]` in `wrangler.toml`), keyed on `CF-Connecting-IP`. Limits live in `config.ts`.
+- **Strict input validation** before anything reaches Etsy: ID format (numeric strings only), max IDs per request, reject unknown query params. Never forward unvalidated input to Etsy.
+- **The shared cache is also a defense**: repeated requests for the same IDs (abusive or not) are served from cache and never reach Etsy.
+- Over-limit requests get `429` with a typed error body; the extension treats it like an Etsy 429 (show nothing new, never a wrong badge).
+
+### API versioning
+- Installed extensions keep running old versions after the Worker updates, so **all API routes are prefixed `/v1/`**. `/health` stays unversioned.
+- A breaking change to a request or response shape means a new `/v2/` route; `/v1/` keeps working until logs show old extension versions are negligible.
+- Request/response contracts in `packages/shared/src/api.ts` are versioned to match (e.g. `V1ListingsResponse`).
+- The extension sends its version in an `X-HandSift-Version` header so logs show which versions are still live.
+
+### Observability
+- Enable Workers Logs (`[observability] enabled = true` in `wrangler.toml`).
+- `log.ts` emits **structured JSON** (one object per event): route, status, latency, cache layer hit (edge / D1 / miss), Etsy calls made, Etsy 429s, our own rate-limit rejections, extension version, errors.
+- **Never log raw IPs, full URLs with user data, or the API key.** Rate limiting may use the IP; logs must not store it. This keeps the privacy policy honest.
 
 ---
 
@@ -338,13 +366,17 @@ Each is its own `SignalModule` file.
 - `scripts/fetch-fixtures.ts` saves JSON for 8 to 10 listings I provide (disclosed AI, handmade, "Designed by" non-AI) plus their shops.
 - **Manual step for me:** save 1 to 2 Etsy search pages as HTML into `fixtures/search-pages/`.
 - `docs/etsy-api.md`: available fields, how "Made by"/"Designed by" maps to API fields, whether an AI flag exists, batch endpoints and limits.
+- **Read Etsy's API Terms of Use and record in `docs/etsy-api.md`:** how long API data may be cached/stored, attribution requirements, and whether a public extension is allowed (go/no-go; don't wait until Phase 12). Set every TTL in `config.ts` to comply; if the terms are stricter than 7 days, adjust Phase 5 (Dexie) and Phase 10 (D1) before building them.
 - Zod schemas in `packages/shared/src/schemas/` built from real responses; tests parse every fixture.
-- **Done when:** schemas validate all fixtures.
+- **Done when:** schemas validate all fixtures and the caching terms are documented.
 
 ### Phase 2: Worker
-- Modules per the file structure: router, handlers, `etsyClient`, cache interface + Cache API impl, middleware (validate, rateLimit, origin).
+- Modules per the file structure: router, handlers, `etsyClient`, cache interface + Cache API impl, middleware (validate, rateLimit, origin), `log.ts`.
+- All API routes under `/v1/` (see Security, versioning, and observability).
+- Per-IP rate limiting via the Workers Rate Limiting binding (required). Strict input validation (numeric IDs, max batch size).
+- Structured JSON logging + `[observability] enabled = true`.
 - Request/response contracts from `packages/shared/src/api.ts`.
-- Tests with the Workers Vitest pool, Etsy mocked.
+- Tests with the Workers Vitest pool, Etsy mocked. Include tests for rate-limit rejection, invalid input, and that no request reaches Etsy without passing validation.
 - Staging/production Wrangler envs + `deploy-staging.yml`.
 - **Manual step for me:** Cloudflare API token + account ID in GitHub secrets.
 - **Done when:** merging to `main` auto-deploys staging, smoke test passes, staging returns real data for fixture IDs.
@@ -417,11 +449,11 @@ Each is its own `SignalModule` file.
 
 ### Phase 12: Hardening + ship
 - Playwright e2e on a saved search page.
-- Confirm Etsy API terms allow a public extension; request production access if required.
+- Re-confirm Etsy API terms allow a public extension (first checked in Phase 1); request production access if required.
 - Display Etsy's required notice prominently in the popup and store listing: "The term 'Etsy' is a trademark of Etsy, Inc. This Application uses Etsy's API, but is not endorsed or certified by Etsy." Follow Etsy's Trademark Policy for any use of the name; never use Etsy's logo or brand styling.
 - **Manual step for me:** Chrome Web Store developer account, first manual upload for the extension ID, CWS API credentials into GitHub secrets.
 - `release.yml`, tested with a `v0.1.0` tag.
-- Store listing: privacy policy (only listing IDs sent to our Worker, forwarded to Etsy), permission justifications, screenshots, README with honest accuracy notes.
+- Store listing: privacy policy (only listing IDs sent to our Worker, forwarded to Etsy; IP addresses used transiently for rate limiting and never logged or stored), permission justifications, screenshots, README with honest accuracy notes.
 - **Done when:** a tag deploys production Worker, creates a GitHub Release, submits the extension.
 
 ---
