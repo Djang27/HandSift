@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    env:
+      WRANGLER_SEND_METRICS: "false"
+    steps:
+      - uses: actions/checkout@v7
+
+      # Version comes from "packageManager" in package.json.
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm format:check
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm depcruise
+
+      # Staging Worker URL is a repository variable (Settings > Secrets and variables >
+      # Actions > Variables). Until staging exists (Phase 2), fall back to localhost.
+      - name: Build extension (staging)
+        env:
+          WXT_WORKER_URL: ${{ vars.STAGING_WORKER_URL || 'http://localhost:8787' }}
+        run: |
+          if [ -z "${{ vars.STAGING_WORKER_URL }}" ]; then
+            echo "::warning::STAGING_WORKER_URL is not set; extension built against http://localhost:8787"
+          fi
+          pnpm --filter @handsift/extension zip
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: extension-chrome-mv3
+          path: apps/extension/.output/*.zip
+          if-no-files-found: error

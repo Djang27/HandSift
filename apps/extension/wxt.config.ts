@@ -13,6 +13,7 @@ function toHostPermission(url: string): string {
 export default defineConfig({
   srcDir: "src",
   imports: false,
+  zip: { artifactTemplate: "handsift-{{version}}-{{browser}}.zip" },
   manifest: () => {
     const url = workerUrl();
     return {
