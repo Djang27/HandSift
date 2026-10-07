@@ -51,3 +51,5 @@ jobs:
           name: extension-chrome-mv3
           path: apps/extension/.output/*.zip
           if-no-files-found: error
+          # WXT's output dir (.output) is hidden; upload-artifact skips hidden paths by default.
+          include-hidden-files: true
