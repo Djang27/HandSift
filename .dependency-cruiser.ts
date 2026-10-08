@@ -1,3 +1,5 @@
+import type { IConfiguration } from "dependency-cruiser";
+
 // Architecture boundaries. Imports only flow downward:
 //   ui / entrypoints -> adapters -> core -> packages/shared
 // Type-only imports count too (tsPreCompilationDeps).
@@ -6,8 +8,7 @@ const EXT = "^apps/extension/src/";
 const WORKER = "^apps/worker/src/";
 const TEST_FILE = "\\.test\\.tsx?$";
 
-/** @type {import('dependency-cruiser').IConfiguration} */
-module.exports = {
+const config: IConfiguration = {
   forbidden: [
     {
       name: "no-circular",
@@ -97,3 +98,5 @@ module.exports = {
     },
   },
 };
+
+export default config;
