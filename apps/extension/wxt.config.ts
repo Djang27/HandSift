@@ -12,6 +12,7 @@ function toHostPermission(url: string): string {
 
 export default defineConfig({
   srcDir: "src",
+  modules: ["@wxt-dev/module-react"],
   imports: false,
   zip: { artifactTemplate: "handsift-{{version}}-{{browser}}.zip" },
   manifest: () => {
@@ -32,7 +33,4 @@ export default defineConfig({
       }
     },
   },
-  vite: () => ({
-    oxc: { jsx: { runtime: "automatic", importSource: "preact" } },
-  }),
 });
