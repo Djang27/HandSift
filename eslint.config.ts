@@ -48,18 +48,16 @@ export default defineConfig(
   },
   {
     // Frameworks require a default export from these files.
-    files: ["**/*.config.ts", "apps/extension/src/entrypoints/**", "apps/worker/src/index.ts"],
+    files: [
+      "**/*.config.ts",
+      ".dependency-cruiser.ts",
+      "apps/extension/src/entrypoints/**",
+      "apps/worker/src/index.ts",
+    ],
     rules: { "no-restricted-syntax": "off" },
   },
   {
     files: ["apps/extension/src/core/**", "packages/shared/src/**"],
     rules: { "no-restricted-globals": ["error", ...IMPURE_GLOBALS] },
-  },
-  {
-    files: ["**/*.cjs"],
-    languageOptions: {
-      sourceType: "commonjs",
-      globals: { module: "writable", require: "readonly" },
-    },
   },
 );

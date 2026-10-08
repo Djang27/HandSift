@@ -39,9 +39,9 @@ Etsy is the first **site adapter**. The architecture must make adding Pinterest 
 |---|---|
 | Repo | pnpm workspaces monorepo: `apps/extension`, `apps/worker`, `packages/shared` |
 | Extension framework | WXT (Manifest V3, Vite-based) |
-| Language | TypeScript (strict mode) everywhere |
+| Language | TypeScript (strict mode) everywhere, including config files |
 | Shared contracts | Zod schemas + inferred types in `packages/shared`, used by both apps |
-| UI (popup + badges) | Preact, badges rendered inside Shadow DOM |
+| UI (popup + badges) | React (via `@wxt-dev/module-react`), badges rendered inside Shadow DOM |
 | Page observation | MutationObserver + IntersectionObserver |
 | Data source | Etsy Open API v3 (public listing + shop endpoints, `x-api-key` auth) |
 | API proxy + shared cache | Cloudflare Workers (Wrangler), Cache API in front of D1 (Phase 10) |
@@ -65,7 +65,7 @@ Etsy is the first **site adapter**. The architecture must make adding Pinterest 
 Imports only flow **downward**. A layer never imports from a layer above it.
 
 ```
-ui / entrypoints        (Preact components, content script, service worker, popup)
+ui / entrypoints        (React components, content script, service worker, popup)
       │
 adapters                (site adapters, API client, Dexie storage, chrome.* wrappers)
       │
@@ -351,7 +351,7 @@ Each is its own `SignalModule` file.
 ## Phases
 
 ### Phase 0: Scaffold + CI + architecture guardrails
-- pnpm monorepo named `handsift` (packages scoped as `@handsift/extension`, `@handsift/worker`, `@handsift/shared`): `apps/extension` (WXT, TS strict, Preact, ESLint, Prettier, Vitest), `apps/worker` (Wrangler, TS, Vitest Workers pool), `packages/shared` (TS, Zod).
+- pnpm monorepo named `handsift` (packages scoped as `@handsift/extension`, `@handsift/worker`, `@handsift/shared`): `apps/extension` (WXT, TS strict, React, ESLint, Prettier, Vitest), `apps/worker` (Wrangler, TS, Vitest Workers pool), `packages/shared` (TS, Zod).
 - Create empty folder structure and `interfaces.ts` from this plan.
 - `.dependency-cruiser.cjs` enforcing the layer rules (core cannot import adapters/ui/chrome/dexie; entrypoints contain no logic is enforced by review).
 - Manifest: name "HandSift: AI Filter for Etsy", short name "HandSift". Host permissions for `*://*.etsy.com/*` and the Worker URL only, plus `storage`.

@@ -1,0 +1,8 @@
+{
+  // Root-level config files only. Each package has its own tsconfig.json.
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": ["eslint.config.ts", ".dependency-cruiser.ts"]
+}
