@@ -13,3 +13,6 @@ worker-configuration.d.ts
 coverage/
 *.log
 .DS_Store
+
+# Real Etsy data (API JSON, saved pages) stays local; see CLAUDE.md.
+fixtures/real/

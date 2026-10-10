@@ -1,0 +1,3 @@
+# Copy to .dev.vars (gitignored) for local `wrangler dev` and scripts.
+# Etsy expects the x-api-key header as "<keystring>:<shared_secret>".
+ETSY_API_KEY=your-keystring:your-shared-secret

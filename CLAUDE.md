@@ -10,7 +10,9 @@
 - **Commit in small, logical steps as you go** (e.g. one commit per package, module, or feature), not one big commit per phase. Each commit should be coherent on its own and have a clear message.
 - Follow the **Code Architecture Rules** below strictly. If a change would break a rule, stop and ask instead of working around it.
 - Ask before adding any dependency not listed in the Tech Stack section.
-- Never guess Etsy API response shapes. Base every schema and type on the saved JSON fixtures in `fixtures/`.
+- Never guess Etsy API response shapes. Base every schema and type on real responses saved locally in `fixtures/real/` (gitignored). Committed test fixtures in `fixtures/synthetic/` copy the real shape with made-up content.
+- **Only commit what the project needs:** source, config, the lockfile, docs, and synthetic fixtures. Never commit real Etsy data (API JSON or saved pages), build output, generated files, or secrets. Delete a folder's `.gitkeep` once a real file lands in it.
+- Follow the **Etsy API Terms compliance** section below. If a feature would conflict with it, stop and ask.
 - **Never put the Etsy API key in the extension or the repo.** It lives only as a Cloudflare Worker secret.
 - Prioritize **precision over recall**. Falsely flagging a real handmade artist is worse than missing an AI listing.
 - Commit messages must not include a `Co-Authored-By: Claude` trailer or any other Claude attribution.
@@ -223,7 +225,9 @@ packages/
       config.ts                  # all tunables
       interfaces.ts              # SiteAdapter, ItemSource, SignalModule, VerdictStore
 fixtures/
-  listings/  shops/  search-pages/
+  real/                          # gitignored: raw Etsy JSON + saved pages, local only
+    listings/  shops/  search-pages/
+  synthetic/                     # committed: same shape as real, made-up content
 scripts/
   fetch-fixtures.ts
   eval.ts                        # runs core/ directly in Node
@@ -234,7 +238,7 @@ docs/
   ci.yml
   deploy-staging.yml
   release.yml
-.dependency-cruiser.cjs
+.dependency-cruiser.ts
 ```
 
 ### Core types (defined as Zod schemas in `packages/shared`)
@@ -270,10 +274,10 @@ type Verdict = {
 
 The Worker itself scales automatically; the real bottleneck is **Etsy's API quota**, since every user shares one API key. So the design minimizes Etsy calls at every layer:
 
-1. **Client cache (Dexie):** a user never re-fetches a listing they already checked (7-day TTL, subject to Etsy's data-storage terms, verified in Phase 1).
+1. **Client cache (Dexie):** a user doesn't re-fetch a listing checked within the last **6 hours** (Etsy's freshness limit for listing content; see Etsy API Terms compliance).
 2. **Batching:** one Worker request per batch of visible listings, not per listing.
 3. **Worker edge cache (Cache API):** repeated lookups served without hitting Etsy. Note: this cache is per Cloudflare data center, not global.
-4. **Shared global cache (Phase 10, D1):** once one user checks a listing or shop, every user gets it free. Lookup order is Cache API (fastest, per data center) -> D1 (global) -> Etsy. D1 stores **raw Etsy data, not verdicts**, so tuning scoring never requires refetching, and no user data is ever stored.
+4. **Shared global cache (Phase 10, D1):** once one user checks a listing or shop, every user gets it free. Lookup order is Cache API (fastest, per data center) -> D1 (global) -> Etsy. D1 stores **only the normalized fields the signals need (not raw Etsy JSON, not verdicts)**, so tuning scoring never requires refetching, Etsy's minimum-data rule is respected, and no user data is ever stored. Entries expire within Etsy's freshness limits (6 h listings, 24 h shops).
 5. **Graceful degradation:** if Etsy returns 429, the Worker returns a clear "rate limited" response and the extension shows nothing new (cached verdicts still display). Never a wrong badge.
 
 ---
@@ -298,6 +302,25 @@ The Worker itself scales automatically; the real bottleneck is **Etsy's API quot
 - Enable Workers Logs (`[observability] enabled = true` in `wrangler.toml`).
 - `log.ts` emits **structured JSON** (one object per event): route, status, latency, cache layer hit (edge / D1 / miss), Etsy calls made, Etsy 429s, our own rate-limit rejections, extension version, errors.
 - **Never log raw IPs, full URLs with user data, or the API key.** Rate limiting may use the IP; logs must not store it. This keeps the privacy policy honest.
+
+---
+
+## Etsy API Terms compliance
+
+From Etsy's API Terms of Use (last updated Aug 18, 2026). Record details and any later changes in `docs/etsy-api.md`.
+
+- **Browser-extension authorization (Section 5).** The terms prohibit browser extensions that access or analyze Etsy data "unless expressly authorized in writing by Etsy". Keep that written authorization on file (and note it in `docs/etsy-api.md`) **before Phase 4**, the first phase where the extension touches Etsy data.
+- **Machine learning / analytics (Section 5)** also needs written authorization. Phase 8 (eval) and Phase 11 (image classifier) are gated on it.
+- **Freshness:** never display listing content more than **6 hours** old, or other Etsy content (shops) more than **24 hours** old. Never cache longer than reasonably necessary. All TTLs in `config.ts` must respect this.
+- **Minimum data:** request and store only the fields the signals use.
+- **Auth:** the `x-api-key` header is `<keystring>:<shared_secret>`. Store that full value as the `ETSY_API_KEY` Worker secret. One key, one app; never create extra keys to get around rate limits.
+- **App changes need Etsy approval:** submit any material change to what the app does (e.g. new signals or modes) to Etsy before shipping it.
+- **Required in the app (Phase 12):**
+  - the trademark notice: "The term 'Etsy' is a trademark of Etsy, Inc. This Application uses Etsy's API, but is not endorsed or certified by Etsy.";
+  - user terms with Etsy's warranty disclaimer plus a privacy policy, accepted by click-through on first run;
+  - a monitored support email.
+- **Never:** copy Etsy's look and feel, use internal Etsy endpoints, scrape pages, or store member personal information.
+- **Dormancy:** an app with no successful API call for 6 months can be suspended.
 
 ---
 
@@ -353,7 +376,7 @@ Each is its own `SignalModule` file.
 ### Phase 0: Scaffold + CI + architecture guardrails
 - pnpm monorepo named `handsift` (packages scoped as `@handsift/extension`, `@handsift/worker`, `@handsift/shared`): `apps/extension` (WXT, TS strict, React, ESLint, Prettier, Vitest), `apps/worker` (Wrangler, TS, Vitest Workers pool), `packages/shared` (TS, Zod).
 - Create empty folder structure and `interfaces.ts` from this plan.
-- `.dependency-cruiser.cjs` enforcing the layer rules (core cannot import adapters/ui/chrome/dexie; entrypoints contain no logic is enforced by review).
+- `.dependency-cruiser.ts` enforcing the layer rules (core cannot import adapters/ui/chrome/dexie; entrypoints contain no logic is enforced by review).
 - Manifest: name "HandSift: AI Filter for Etsy", short name "HandSift". Host permissions for `*://*.etsy.com/*` and the Worker URL only, plus `storage`.
 - Worker names in `wrangler.toml`: `handsift-api-staging`, `handsift-api` (production).
 - Content script logs "loaded"; Worker has `/health`.
@@ -362,13 +385,13 @@ Each is its own `SignalModule` file.
 - **Done when:** extension loads unpacked, Worker runs with `wrangler dev`, CI (including dependency-cruiser) passes.
 
 ### Phase 1: Etsy API access + recon + shared schemas
-- **Manual step for me:** register an app on Etsy's developer portal, get the key, `wrangler secret put ETSY_API_KEY --env staging`. Note the app's rate limits.
-- `scripts/fetch-fixtures.ts` saves JSON for 8 to 10 listings I provide (disclosed AI, handmade, "Designed by" non-AI) plus their shops.
-- **Manual step for me:** save 1 to 2 Etsy search pages as HTML into `fixtures/search-pages/`.
+- **Manual step for me:** register an app on Etsy's developer portal (done) and put `ETSY_API_KEY=<keystring>:<shared_secret>` in `apps/worker/.dev.vars` (gitignored). Note the app's rate limits. The staging secret (`wrangler secret put ETSY_API_KEY --env staging`) can wait until Phase 2.
+- `scripts/fetch-fixtures.ts` saves JSON for 8 to 10 listings I provide (disclosed AI, handmade, "Designed by" non-AI) plus their shops into `fixtures/real/` (gitignored).
+- **Manual step for me:** save 1 to 2 Etsy search pages as HTML into `fixtures/real/search-pages/` (gitignored).
 - `docs/etsy-api.md`: available fields, how "Made by"/"Designed by" maps to API fields, whether an AI flag exists, batch endpoints and limits.
-- **Read Etsy's API Terms of Use and record in `docs/etsy-api.md`:** how long API data may be cached/stored, attribution requirements, and whether a public extension is allowed (go/no-go; don't wait until Phase 12). Set every TTL in `config.ts` to comply; if the terms are stricter than 7 days, adjust Phase 5 (Dexie) and Phase 10 (D1) before building them.
-- Zod schemas in `packages/shared/src/schemas/` built from real responses; tests parse every fixture.
-- **Done when:** schemas validate all fixtures and the caching terms are documented.
+- `docs/etsy-api.md` also records the terms that affect us (see Etsy API Terms compliance) and the status of the Section 5 authorization.
+- Zod schemas in `packages/shared/src/schemas/` built from the real responses. Synthetic fixtures in `fixtures/synthetic/` mirror them for CI. Tests parse every synthetic fixture, plus every real one when present locally (skipped otherwise).
+- **Done when:** schemas validate all fixtures and the terms are documented.
 
 ### Phase 2: Worker
 - Modules per the file structure: router, handlers, `etsyClient`, cache interface + Cache API impl, middleware (validate, rateLimit, origin), `log.ts`.
@@ -393,7 +416,7 @@ Each is its own `SignalModule` file.
 - **Done when:** scrolling Etsy logs listing data for visible cards, batched, no request flooding.
 
 ### Phase 5: Client cache
-- `DexieStore` implementing `VerdictStore`, 7-day TTL. Settings wrapper.
+- `DexieStore` implementing `VerdictStore`, 6-hour TTL from `config.ts`. Settings wrapper.
 - **Done when:** revisiting a page makes zero new requests for checked listings.
 
 ### Phase 6: Scoring + UI
@@ -403,10 +426,11 @@ Each is its own `SignalModule` file.
 - **Done when:** badges correct while scrolling, all modes work, tooltips show reasons.
 
 ### Phase 7: Shop heuristics
-- `shopHeuristics` signal, shop data fetched once per shop and cached.
+- `shopHeuristics` signal, shop data fetched once per shop and cached for at most 24 hours.
 - **Done when:** shop reasons appear in tooltips; no duplicate shop fetches.
 
 ### Phase 8: Eval harness
+- **Gated:** needs Etsy's written authorization for analytics use (see Etsy API Terms compliance).
 - `data/labels.csv`: `listing_id, label (ai|human), source_of_label`.
 - `scripts/eval.ts` runs `core/` directly in Node on labeled data, prints precision, recall, confusion matrix at several thresholds.
 - **Manual step for me:** grow labels toward 200+.
@@ -421,7 +445,7 @@ Each is its own `SignalModule` file.
   ```sql
   CREATE TABLE listings_cache (
     listing_id TEXT PRIMARY KEY,
-    data       TEXT NOT NULL,      -- raw Etsy JSON, validated by Zod on read
+    data       TEXT NOT NULL,      -- normalized fields only (not raw Etsy JSON), validated by Zod on read
     fetched_at INTEGER NOT NULL,
     expires_at INTEGER NOT NULL
   );
@@ -436,7 +460,7 @@ Each is its own `SignalModule` file.
   ```
 - `d1Cache.ts` implements the cache interface: bound parameters only (never string-built SQL), batched reads (`WHERE listing_id IN (...)`) and batched upserts (`db.batch`).
 - `layeredCache.ts`: Cache API -> D1 -> Etsy, writing back to both on a miss. Handlers do not change.
-- Cron Trigger (daily) runs `cleanup.ts` to delete expired rows.
+- Cron Trigger (hourly) runs `cleanup.ts` to delete expired rows.
 - Request coalescing: concurrent lookups for the same uncached ID share one Etsy call.
 - Handle Etsy 429s per the Scaling plan.
 - Tests use the Workers Vitest pool with a local D1 binding and migrations applied.
@@ -444,12 +468,14 @@ Each is its own `SignalModule` file.
 - **Done when:** a second "user" (fresh browser profile) gets results with zero Etsy calls, and expired rows are cleaned up.
 
 ### Phase 11 (stretch): Image classifier
+- **Gated:** needs Etsy's written authorization for machine-learning use (see Etsy API Terms compliance).
 - `imageClassifier` SignalModule; model runs in offscreen document behind an adapter.
 - Only in ambiguous score range, feature-flagged off. Keep only if eval improves.
 
 ### Phase 12: Hardening + ship
 - Playwright e2e on a saved search page.
-- Re-confirm Etsy API terms allow a public extension (first checked in Phase 1); request production access if required.
+- Re-read Etsy's API terms for changes; submit the final app behavior to Etsy if it changed since approval.
+- First-run screen: user terms (with Etsy's warranty disclaimer) and privacy policy, accepted by click-through. Support email in the popup and store listing.
 - Display Etsy's required notice prominently in the popup and store listing: "The term 'Etsy' is a trademark of Etsy, Inc. This Application uses Etsy's API, but is not endorsed or certified by Etsy." Follow Etsy's Trademark Policy for any use of the name; never use Etsy's logo or brand styling.
 - **Manual step for me:** Chrome Web Store developer account, first manual upload for the extension ID, CWS API credentials into GitHub secrets.
 - `release.yml`, tested with a `v0.1.0` tag.
