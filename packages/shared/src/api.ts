@@ -52,6 +52,11 @@ export const V1ListingsResponseSchema = z.object({
   results: z.array(V1ListingResultSchema),
   /** Requested IDs Etsy says don't exist (deleted, private, ...). Show nothing for these. */
   missing: z.array(z.string()),
+  /**
+   * Requested IDs that couldn't be checked right now (Etsy rate limit or error, or invalid
+   * Etsy data). Show nothing for these; a non-empty list means "back off for a bit".
+   */
+  unavailable: z.array(z.string()),
 });
 
 export type V1ListingsResponse = z.infer<typeof V1ListingsResponseSchema>;
