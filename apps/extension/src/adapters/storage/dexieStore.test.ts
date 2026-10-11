@@ -38,7 +38,7 @@ describe("dexieStore", () => {
     const { dbName, store } = setup();
     await store.put([verdict("1")]);
     const raw = new Dexie(dbName);
-    raw.version(1).stores({ verdicts: "listingId, checkedAt" });
+    raw.version(2).stores({ verdicts: "listingId, checkedAt" });
     await raw.table("verdicts").put({ listingId: "2", level: "nonsense", checkedAt: NOW });
     raw.close();
     expect([...(await store.get(["1", "2"])).keys()]).toEqual(["1"]);
@@ -55,6 +55,17 @@ describe("dexieStore", () => {
     await store.put([verdict("another", now)]);
     expect((await store.get(["old"])).size).toBe(0);
     expect((await store.get(["fresh"])).size).toBe(1);
+  });
+
+  it("clears verdicts saved by the interim scorer when upgrading from v1", async () => {
+    const dbName = `test-${crypto.randomUUID()}`;
+    const v1 = new Dexie(dbName);
+    v1.version(1).stores({ verdicts: "listingId, checkedAt" });
+    await v1.table("verdicts").put(verdict("old-unclear"));
+    v1.close();
+
+    const store = createDexieStore({ dbName, now: () => NOW });
+    expect((await store.get(["old-unclear"])).size).toBe(0);
   });
 
   it("clears everything", async () => {
