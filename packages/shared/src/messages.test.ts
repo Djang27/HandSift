@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 import { ExtensionMessageSchema } from "./messages";
 
 describe("ExtensionMessageSchema", () => {
+  it.each([{ type: "clearCache" }, { type: "getPageStats" }])("accepts %j", (msg) => {
+    expect(ExtensionMessageSchema.parse(msg)).toEqual(msg);
+  });
+
   it("accepts a checkListings message", () => {
     const msg = { type: "checkListings", ids: ["1317074462"] };
     expect(ExtensionMessageSchema.parse(msg)).toEqual(msg);

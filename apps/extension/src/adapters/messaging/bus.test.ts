@@ -1,6 +1,16 @@
 import type { CheckListingsReply } from "@handsift/shared";
 import { describe, expect, it, vi } from "vitest";
-import { onCheckListings, requestCheckListings, type MessageListener, type Runtime } from "./bus";
+import {
+  onCheckListings,
+  onClearCache,
+  onGetPageStats,
+  requestCheckListings,
+  requestClearCache,
+  requestPageStats,
+  type MessageListener,
+  type Runtime,
+  type Tabs,
+} from "./bus";
 
 type Listener = MessageListener;
 
@@ -95,5 +105,59 @@ describe("onCheckListings", () => {
     expect(listeners.size).toBe(1);
     stop();
     expect(listeners.size).toBe(0);
+  });
+});
+
+describe("message types don't cross", () => {
+  it("each handler answers only its own type", async () => {
+    const { runtime, dispatch } = fakeRuntime();
+    const check = vi.fn().mockResolvedValue(REPLY);
+    onCheckListings(check, runtime);
+    expect(await dispatch({ type: "clearCache" })).toBeUndefined();
+    expect(check).not.toHaveBeenCalled();
+  });
+});
+
+describe("clearCache", () => {
+  it("runs the handler and replies cleared", async () => {
+    const { runtime, dispatch } = fakeRuntime();
+    const clear = vi.fn().mockResolvedValue(undefined);
+    onClearCache(clear, runtime);
+    expect(await dispatch({ type: "clearCache" })).toEqual({ cleared: true });
+    expect(clear).toHaveBeenCalledOnce();
+  });
+
+  it("replies cleared: false if the handler fails", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const { runtime, dispatch } = fakeRuntime();
+    onClearCache(vi.fn().mockRejectedValue(new Error("db")), runtime);
+    expect(await dispatch({ type: "clearCache" })).toEqual({ cleared: false });
+  });
+
+  it("requestClearCache validates the reply", async () => {
+    const { runtime } = fakeRuntime(vi.fn().mockResolvedValue({ cleared: true }));
+    expect(await requestClearCache(runtime)).toEqual({ cleared: true });
+  });
+});
+
+describe("getPageStats", () => {
+  const STATS = { checked: 46, disclosed: 3, likely: 0 };
+
+  it("content script answers with its page stats", async () => {
+    const { runtime, dispatch } = fakeRuntime();
+    onGetPageStats(() => STATS, runtime);
+    expect(await dispatch({ type: "getPageStats" })).toEqual(STATS);
+  });
+
+  it("popup asks the tab and returns null when no content script is there", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const tabs = { sendMessage: vi.fn().mockResolvedValue(STATS) } as unknown as Tabs;
+    expect(await requestPageStats(7, tabs)).toEqual(STATS);
+    expect(tabs.sendMessage).toHaveBeenCalledWith(7, { type: "getPageStats" });
+
+    const noReceiver = {
+      sendMessage: vi.fn().mockRejectedValue(new Error("Receiving end does not exist")),
+    } as unknown as Tabs;
+    expect(await requestPageStats(7, noReceiver)).toBeNull();
   });
 });
