@@ -1,7 +1,7 @@
 import { BATCH_DELAY_MS, MAX_IDS_PER_REQUEST } from "@handsift/shared";
 import { defineContentScript } from "wxt/utils/define-content-script";
 import { requestCheckListings } from "../adapters/messaging/bus";
-import { observeVisibleItems } from "../adapters/page/observeVisibleItems";
+import { observePageItems } from "../adapters/page/observePageItems";
 import { etsyAdapter } from "../adapters/sites/etsy/etsyAdapter";
 import { createBatchQueue } from "../core/batchQueue";
 
@@ -22,14 +22,14 @@ export default defineContentScript({
         }
         queue.release(reply.unavailable);
         console.info(
-          `[HandSift] ${String(ids.length)} visible listings checked: ` +
+          `[HandSift] ${String(ids.length)} listings checked: ` +
             `${String(reply.verdicts.length)} verdicts, ${String(reply.unavailable.length)} unavailable`,
           reply.verdicts.filter((v) => v.reasons.length > 0),
         );
       },
     });
 
-    const stop = observeVisibleItems(document, etsyAdapter, (id) => {
+    const stop = observePageItems(document, etsyAdapter, (id) => {
       queue.add(id);
     });
     ctx.onInvalidated(() => {
