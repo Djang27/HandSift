@@ -80,6 +80,52 @@ describe("displayLevel", () => {
   });
 });
 
+describe("how real signals combine", () => {
+  const DAY = 24 * 60 * 60 * 1000;
+  const NOW = Date.UTC(2026, 9, 10);
+  const suspiciousShop = {
+    shopId: "9",
+    createdAt: NOW - 60 * DAY,
+    activeListingCount: 900,
+    digitalListingCount: 0,
+    salesCount: 3,
+  };
+  const listing: ListingData = {
+    listingId: "1",
+    shopId: "9",
+    title: "Canvas print",
+    description: "Printed by our partner.",
+    tags: [],
+    materials: [],
+    whoMade: "someone_else",
+    listingType: "physical",
+    hasProductionPartner: true,
+  };
+
+  it("an undisclosed listing with a production partner in a suspicious shop is likely AI on balanced, not conservative", () => {
+    const input = { listing, shop: suspiciousShop, fetchedAt: NOW };
+    const v = score({ listing, signals: SIGNALS.map((s) => s.evaluate(input)), checkedAt: NOW });
+    expect(v.level).not.toBe("disclosed_ai");
+    expect(displayLevel(v, "conservative")).toBe("unclear");
+    expect(displayLevel(v, "balanced")).toBe("likely_ai");
+    expect(v.reasons.some((r) => r.startsWith("Shop: "))).toBe(true);
+  });
+
+  it("the same shop alone, without other clues, is never likely AI on conservative", () => {
+    const input = {
+      listing: { ...listing, whoMade: "i_did", hasProductionPartner: false },
+      shop: suspiciousShop,
+      fetchedAt: NOW,
+    };
+    const v = score({
+      listing: input.listing,
+      signals: SIGNALS.map((s) => s.evaluate(input)),
+      checkedAt: NOW,
+    });
+    expect(displayLevel(v, "conservative")).toBe("unclear");
+  });
+});
+
 describe("score with the real signal registry", () => {
   const evaluate = (input: ReturnType<typeof syntheticInputs>[number]) =>
     score({ listing: input.listing, signals: SIGNALS.map((s) => s.evaluate(input)), checkedAt: 1 });
