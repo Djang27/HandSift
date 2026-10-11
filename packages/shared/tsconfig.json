@@ -2,7 +2,10 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     // DOM types are needed only for the SiteAdapter interface (exported via "./interfaces").
-    "lib": ["ES2023", "DOM"]
+    "lib": ["ES2023", "DOM"],
+    // Node types are for tests reading fixtures. ESLint and dependency-cruiser keep
+    // src/ free of Node APIs.
+    "types": ["node"]
   },
-  "include": ["src", "vitest.config.ts"]
+  "include": ["src", "test", "vitest.config.ts"]
 }

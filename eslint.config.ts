@@ -44,6 +44,11 @@ export default defineConfig(
         "error",
         { selector: "ExportDefaultDeclaration", message: "Use named exports only." },
       ],
+      // Allow intentionally unused `_name` bindings, e.g. `const { a: _a, ...rest } = obj`.
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_", ignoreRestSiblings: true },
+      ],
     },
   },
   {
