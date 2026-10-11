@@ -3,12 +3,12 @@ import { defineBackground } from "wxt/utils/define-background";
 import { onCheckListings } from "../adapters/messaging/bus";
 import { withLogging } from "../adapters/source/loggingSource";
 import { createWorkerSource } from "../adapters/source/workerSource";
-import { createMemoryStore } from "../adapters/storage/memoryStore";
+import { createDexieStore } from "../adapters/storage/dexieStore";
 import { checkListings } from "../core/pipeline";
 import { unscored } from "../core/scoring/unscored";
 import { SIGNALS } from "../core/signals";
 
-// Wiring only. Memory store until Phase 5 (Dexie); unscored until Phase 6 (scoring).
+// Wiring only. Verdicts persist in IndexedDB; unscored until Phase 6 (scoring).
 export default defineBackground(() => {
   const source = withLogging(
     createWorkerSource({
@@ -17,7 +17,7 @@ export default defineBackground(() => {
     }),
   );
   const deps = {
-    store: createMemoryStore(),
+    store: createDexieStore(),
     source,
     signals: SIGNALS,
     score: unscored,
