@@ -5,10 +5,10 @@ import { withLogging } from "../adapters/source/loggingSource";
 import { createWorkerSource } from "../adapters/source/workerSource";
 import { createDexieStore } from "../adapters/storage/dexieStore";
 import { checkListings } from "../core/pipeline";
-import { unscored } from "../core/scoring/unscored";
+import { score } from "../core/scoring/score";
 import { SIGNALS } from "../core/signals";
 
-// Wiring only. Verdicts persist in IndexedDB; unscored until Phase 6 (scoring).
+// Wiring only.
 export default defineBackground(() => {
   const source = withLogging(
     createWorkerSource({
@@ -20,7 +20,7 @@ export default defineBackground(() => {
     store: createDexieStore(),
     source,
     signals: SIGNALS,
-    score: unscored,
+    score,
     now: Date.now,
   };
   onCheckListings((ids) => checkListings(ids, deps));

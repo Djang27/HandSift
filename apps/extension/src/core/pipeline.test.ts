@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { syntheticInputs } from "../../test/fixtures";
 import { createMemoryStore } from "../adapters/storage/memoryStore";
 import { checkListings, type PipelineDeps } from "./pipeline";
-import { unscored } from "./scoring/unscored";
+import { score } from "./scoring/score";
 import { SIGNALS } from "./signals";
 
 const NOW = 1_800_000_000_000;
@@ -34,7 +34,7 @@ function deps(overrides: Partial<PipelineDeps> = {}): PipelineDeps {
     store: createMemoryStore(),
     source: serveFixtures,
     signals: SIGNALS,
-    score: unscored,
+    score,
     now: () => NOW,
     ...overrides,
   };
