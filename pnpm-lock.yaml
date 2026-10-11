@@ -190,6 +190,9 @@ importers:
       typescript-eslint:
         specifier: ^8.71.1
         version: 8.71.1(eslint@10.12.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+      zod:
+        specifier: ^4.6.5
+        version: 4.6.5
 
   apps/extension:
     dependencies:
