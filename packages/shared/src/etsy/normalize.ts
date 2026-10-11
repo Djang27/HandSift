@@ -1,4 +1,7 @@
-import type { EtsyListing, EtsyShop, ListingData, ShopData } from "@handsift/shared";
+import type { EtsyListing } from "../schemas/etsy/listing";
+import type { EtsyShop } from "../schemas/etsy/shop";
+import type { ListingData } from "../schemas/listing";
+import type { ShopData } from "../schemas/shop";
 import { decodeEntities } from "./decodeEntities";
 
 export function toListingData(listing: EtsyListing): ListingData {
