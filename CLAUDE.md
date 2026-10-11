@@ -193,6 +193,7 @@ apps/
         pipeline.ts              # orchestration, depends only on interfaces
         batchQueue.ts            # batches visible listing IDs
         text.ts                  # text normalization helpers for signals
+        eval/                    # metrics + labels parser for scripts/eval.ts (not shipped)
         signals/
           index.ts               # registry
           descriptionDisclosure.ts
@@ -249,7 +250,7 @@ fixtures/
   synthetic/                     # committed: same shape as real, made-up content
 scripts/
   fetch-fixtures.ts
-  eval.ts                        # runs core/ directly in Node
+  eval.ts                        # pnpm eval: runs core/ in Node on data/labels.csv
 data/
   labels.csv
 docs/
@@ -477,7 +478,7 @@ Each is its own `SignalModule` file.
 
 ### Phase 8: Eval harness
 - `data/labels.csv`: `listing_id, label (ai|human), source_of_label`.
-- `scripts/eval.ts` runs `core/` directly in Node on labeled data, prints precision, recall, confusion matrix at several thresholds.
+- `scripts/eval.ts` (`pnpm eval`) runs `core/` directly in Node on labeled data, prints precision, recall, confusion matrix at several thresholds, plus the listings it got wrong. Listings are fetched through the Worker (nothing saved). How-to in `docs/evaluation.md`.
 - **Manual step for me:** grow labels toward 200+.
 - **Done when:** one command prints metrics.
 
