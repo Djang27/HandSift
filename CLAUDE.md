@@ -144,8 +144,7 @@ Service worker (entrypoint)
             ▼
 Cloudflare Worker
   - holds Etsy API key as a secret
-  - GET /v1/listings?ids=...  -> batched Etsy lookup
-  - GET /v1/shops/:shopId     -> Etsy shop lookup
+  - GET /v1/listings?ids=...  -> batched Etsy lookup; each listing comes with its shop
   - GET /health               -> unversioned liveness check (smoke tests)
   - cache layer: Cache API -> D1 (Phase 10) -> Etsy
   - per-IP rate limiting (primary abuse defense), input validation,
@@ -196,12 +195,14 @@ apps/
     src/
       index.ts                   # entry, wiring only
       router.ts
+      responses.ts               # typed error responses
       handlers/
         listings.ts
-        shops.ts
         health.ts
       etsy/
         etsyClient.ts            # only file that talks to Etsy
+        normalize.ts             # raw Etsy -> ListingData/ShopData
+        decodeEntities.ts
       cache/
         cache.ts                 # cache interface
         edgeCache.ts             # Cache API impl
@@ -286,9 +287,10 @@ The Worker itself scales automatically; the real bottleneck is **Etsy's API quot
 
 1. **Client cache (Dexie):** a user doesn't re-fetch a listing checked within the last **6 hours** (Etsy's freshness limit for listing content; see Etsy API Terms compliance).
 2. **Batching:** one Worker request per batch of visible listings, not per listing.
-3. **Worker edge cache (Cache API):** repeated lookups served without hitting Etsy. Note: this cache is per Cloudflare data center, not global.
+3. **Worker edge cache (Cache API):** repeated lookups served without hitting Etsy. Note: this cache is per Cloudflare data center, not global, and **only works on a custom domain** (it's a no-op on `*.workers.dev`). Staging runs on workers.dev, so its real shared cache arrives with D1 in Phase 10; give production a custom domain before launch.
 4. **Shared global cache (Phase 10, D1):** once one user checks a listing or shop, every user gets it free. Lookup order is Cache API (fastest, per data center) -> D1 (global) -> Etsy. D1 stores **only the normalized fields the signals need (not raw Etsy JSON, not verdicts)**, so tuning scoring never requires refetching, Etsy's minimum-data rule is respected, and no user data is ever stored. Entries expire within Etsy's freshness limits (6 h listings, 24 h shops).
-5. **Graceful degradation:** if Etsy returns 429, the Worker returns a clear "rate limited" response and the extension shows nothing new (cached verdicts still display). Never a wrong badge.
+5. **Graceful degradation:** if Etsy returns 429 or errors, the Worker still returns what it has cached and lists the other IDs as `unavailable`; the extension shows nothing new for those (cached verdicts still display) and backs off. Never a wrong badge.
+6. **Global Etsy budget (later):** per-IP limits don't stop abuse spread across many IPs. Before launch, stop calling Etsy once `x-remaining-today` drops below a reserve (cache-only mode).
 
 ---
 
@@ -297,7 +299,7 @@ The Worker itself scales automatically; the real bottleneck is **Etsy's API quot
 ### Abuse model: the Worker is a public endpoint
 - An extension **cannot prove its identity**. The `Origin` header and extension ID are trivially spoofed by any script, so anyone can call the Worker directly and burn the shared Etsy quota.
 - The **origin check is not security**. It only filters casual misuse (random web pages calling the Worker from a browser). Never rely on it for anything.
-- **Per-IP rate limiting is the actual defense and is required**, not optional. Use Cloudflare's Workers Rate Limiting binding (`[[ratelimits]]` in `wrangler.toml`), keyed on `CF-Connecting-IP`. Limits live in `config.ts`.
+- **Per-IP rate limiting is the actual defense and is required**, not optional. Use Cloudflare's Workers Rate Limiting binding (`[[ratelimits]]` in `wrangler.toml`), keyed on `CF-Connecting-IP`. The limit (currently 30 requests/minute per IP, per Cloudflare location) lives in `wrangler.toml`, the one exception to "all tunables in `config.ts`", because Cloudflare reads it from there.
 - **Strict input validation** before anything reaches Etsy: ID format (numeric strings only), max IDs per request, reject unknown query params. Never forward unvalidated input to Etsy.
 - **The shared cache is also a defense**: repeated requests for the same IDs (abusive or not) are served from cache and never reach Etsy.
 - Over-limit requests get `429` with a typed error body; the extension treats it like an Etsy 429 (show nothing new, never a wrong badge).
@@ -423,7 +425,7 @@ Each is its own `SignalModule` file.
 
 ### Phase 4: Site adapter + pipeline
 - **Gated:** needs Etsy's Section 5 written authorization (see Etsy API Terms compliance).
-- Shop data now arrives with listings (Phase 1 finding). Decide whether `ItemSource.getShop` is still needed or whether `getListings` should return shops too; ask before changing the interface.
+- Shop data arrives with listings: the Worker has no shops route (decided in Phase 2). Update `ItemSource` accordingly (e.g. drop `getShop`, have `getListings` return shops too); ask before changing the interface.
 - `EtsyAdapter` implementing `SiteAdapter`, tested on saved search pages.
 - `WorkerSource` implementing `ItemSource`, typed message bus.
 - `core/pipeline.ts` using interfaces only; tested with fake source + in-memory store.
