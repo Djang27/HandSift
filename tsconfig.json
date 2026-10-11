@@ -2,7 +2,9 @@
   // Root-level config files and scripts. Each package has its own tsconfig.json.
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "types": ["node"]
+    "types": ["node"],
+    // scripts/eval.ts imports extension modules whose shared interfaces mention DOM types.
+    "lib": ["ES2023", "DOM"]
   },
   "include": ["eslint.config.ts", ".dependency-cruiser.ts", "scripts"]
 }
