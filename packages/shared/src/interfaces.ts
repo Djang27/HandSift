@@ -1,3 +1,4 @@
+import type { V1ListingsResponse } from "./api";
 import type { ListingData } from "./schemas/listing";
 import type { ShopData } from "./schemas/shop";
 import type { Signal } from "./schemas/signal";
@@ -15,10 +16,17 @@ export interface SiteAdapter {
   mountBadge(el: Element): HTMLElement;
 }
 
+/**
+ * Listings (each with its shop and fetchedAt), plus IDs that don't exist and IDs that
+ * couldn't be checked right now. Same shape as the Worker's v1 response.
+ */
+export type ListingsLookup = V1ListingsResponse;
+
 // Where item data comes from (Etsy API via Worker now; could be another source later).
+// Shops arrive with their listings, so there is no separate getShop.
 export interface ItemSource {
-  getListings(ids: string[]): Promise<ListingData[]>;
-  getShop(shopId: string): Promise<ShopData>;
+  /** Never rejects: failures come back as `unavailable`. */
+  getListings(ids: readonly string[]): Promise<ListingsLookup>;
 }
 
 export interface SignalInput {

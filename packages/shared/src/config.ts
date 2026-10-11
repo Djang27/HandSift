@@ -30,6 +30,15 @@ export const MISSING_LISTING_CACHE_TTL_MS = 1 * HOUR_MS;
 /** Max listing IDs per /v1/listings request. Matches Etsy's batch cap: one Etsy call per request. */
 export const MAX_IDS_PER_REQUEST = 100;
 
+/** How long the content script collects newly visible listing IDs before sending a batch. */
+export const BATCH_DELAY_MS = 300;
+
+/** Max concurrent requests from the extension to the Worker. */
+export const WORKER_CONCURRENCY = 2;
+
+/** After the Worker reports listings unavailable (or fails), pause new requests this long. */
+export const WORKER_BACKOFF_MS = 30 * SECOND_MS;
+
 // Signals
 
 /** Default weight per signal id (0 to 1). Tuned for precision in Phase 9. */

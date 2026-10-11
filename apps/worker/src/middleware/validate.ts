@@ -1,8 +1,4 @@
-import { MAX_IDS_PER_REQUEST } from "@handsift/shared";
-import { z } from "zod";
-
-// Etsy listing IDs are positive int64s: 1 to 19 digits, no leading zero.
-const ListingIdSchema = z.string().regex(/^[1-9]\d{0,18}$/);
+import { ListingIdSchema, MAX_IDS_PER_REQUEST } from "@handsift/shared";
 
 export type ParseResult<T> = { ok: true; value: T } | { ok: false; message: string };
 

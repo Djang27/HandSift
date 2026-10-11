@@ -10,6 +10,7 @@ export const VerdictSchema = z.object({
   level: VerdictLevelSchema,
   score: z.number().min(0).max(1),
   reasons: z.array(z.string()),
+  /** When the underlying Etsy data was fetched (Unix ms). Freshness is measured from this. */
   checkedAt: z.number().int().nonnegative(),
 });
 
