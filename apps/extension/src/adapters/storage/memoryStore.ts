@@ -2,8 +2,7 @@ import type { Verdict } from "@handsift/shared";
 import type { VerdictStore } from "@handsift/shared/interfaces";
 
 /**
- * In-memory VerdictStore. Used by the service worker until Phase 5's Dexie store, and by
- * tests. Contents are lost when the service worker stops.
+ * In-memory VerdictStore for tests (the service worker uses the Dexie store).
  */
 export function createMemoryStore(): VerdictStore {
   const verdicts = new Map<string, Verdict>();

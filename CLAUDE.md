@@ -53,7 +53,7 @@ Etsy is the first **site adapter**. The architecture must make adding Pinterest 
 | Local database | IndexedDB via Dexie |
 | Settings | chrome.storage.sync |
 | Image classifier (stretch) | transformers.js in an offscreen document |
-| Unit tests | Vitest (extension, shared) + Vitest with Cloudflare's Workers test pool (worker); jsdom for DOM tests |
+| Unit tests | Vitest (extension, shared) + Vitest with Cloudflare's Workers test pool (worker); jsdom for DOM tests; fake-indexeddb for Dexie tests |
 | E2E tests (later) | Playwright with the extension loaded |
 | Architecture enforcement | dependency-cruiser (import boundary rules, run in CI) |
 | CI/CD | GitHub Actions: CI on every push/PR, Worker deploys via `cloudflare/wrangler-action`, Chrome Web Store submission via `wxt submit` |
@@ -181,7 +181,7 @@ apps/
           workerSource.ts        # implements ItemSource, calls the Worker
           loggingSource.ts       # logs fetched listing data (dev visibility)
         storage/
-          memoryStore.ts         # in-memory VerdictStore (until Dexie; also tests)
+          memoryStore.ts         # in-memory VerdictStore (tests)
           dexieStore.ts          # implements VerdictStore
           settings.ts            # chrome.storage.sync wrapper
         messaging/
@@ -451,7 +451,8 @@ Each is its own `SignalModule` file.
 - **Done when:** scrolling Etsy logs listing data for visible cards, batched, no request flooding.
 
 ### Phase 5: Client cache
-- `DexieStore` implementing `VerdictStore`, 6-hour TTL from `config.ts` measured from `checkedAt` (the data's fetch time). Replaces the in-memory store in the service worker. Settings wrapper.
+- `DexieStore` implementing `VerdictStore`, 6-hour TTL from `config.ts` measured from `checkedAt` (the data's fetch time). Replaces the in-memory store in the service worker. Expired verdicts are deleted on startup and at most hourly. Tests run real Dexie against `fake-indexeddb` (dev dependency, approved).
+- Settings wrapper over `chrome.storage.sync`: `enabled`, `mode` (label/blur/hide), `sensitivity` (conservative/balanced/aggressive), defaults in `config.ts` (on, label, conservative). Each field validated separately on read.
 - **Done when:** revisiting a page makes zero new requests for checked listings.
 
 ### Phase 6: Scoring + UI

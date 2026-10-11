@@ -103,6 +103,25 @@ describe("checkListings", () => {
     expect(unavailable).toEqual([AI]);
   });
 
+  it("keeps results stamped slightly ahead of the local clock (slow request, clock skew)", async () => {
+    // Regression: the local clock is read before the lookup; the Worker stamps fetchedAt
+    // later, on Cloudflare's clock. Such results used to be dropped as "from the future".
+    let now = NOW;
+    const src = source(() => {
+      now = NOW + 800; // request took 800 ms
+      return { results: [result(AI, NOW + 1500)] }; // Worker clock 700 ms ahead of ours
+    });
+    const store = createMemoryStore();
+    const { verdicts, unavailable } = await checkListings(
+      [AI],
+      deps({ store, source: src, now: () => now }),
+    );
+
+    expect(unavailable).toEqual([]);
+    expect(verdicts[0]?.checkedAt).toBe(NOW + 800); // capped at arrival, on our clock
+    expect((await store.get([AI])).size).toBe(1);
+  });
+
   it("ignores results for IDs it didn't ask for", async () => {
     const src = source(() => ({ results: [result(AI), result(OTHER)] }));
     const { verdicts } = await checkListings([AI], deps({ source: src }));
