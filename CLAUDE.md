@@ -53,7 +53,7 @@ Etsy is the first **site adapter**. The architecture must make adding Pinterest 
 | Local database | IndexedDB via Dexie |
 | Settings | chrome.storage.sync |
 | Image classifier (stretch) | transformers.js in an offscreen document |
-| Unit tests | Vitest (extension, shared) + Vitest with Cloudflare's Workers test pool (worker) |
+| Unit tests | Vitest (extension, shared) + Vitest with Cloudflare's Workers test pool (worker); jsdom for DOM tests |
 | E2E tests (later) | Playwright with the extension loaded |
 | Architecture enforcement | dependency-cruiser (import boundary rules, run in CI) |
 | CI/CD | GitHub Actions: CI on every push/PR, Worker deploys via `cloudflare/wrangler-action`, Chrome Web Store submission via `wxt submit` |
@@ -95,9 +95,13 @@ interface SiteAdapter {
 }
 
 // Where item data comes from (Etsy API via Worker now; could be another source later).
+// Shops arrive with their listings (no getShop). Never rejects: failures are "unavailable".
 interface ItemSource {
-  getListings(ids: string[]): Promise<ListingData[]>;
-  getShop(shopId: string): Promise<ShopData>;
+  getListings(ids: readonly string[]): Promise<{
+    results: { listing: ListingData; shop: ShopData | null; fetchedAt: number }[];
+    missing: string[];       // don't exist on Etsy
+    unavailable: string[];   // couldn't be checked right now
+  }>;
 }
 
 // One detection signal. Adding a signal = one new file + register it. Scoring never changes.
@@ -171,15 +175,20 @@ apps/
           etsy/
             etsyAdapter.ts       # implements SiteAdapter
             selectors.ts         # Etsy DOM selectors (only place they exist)
+        page/
+          observeVisibleItems.ts # IntersectionObserver + MutationObserver, site agnostic
         source/
           workerSource.ts        # implements ItemSource, calls the Worker
+          loggingSource.ts       # logs fetched listing data (dev visibility)
         storage/
+          memoryStore.ts         # in-memory VerdictStore (until Dexie; also tests)
           dexieStore.ts          # implements VerdictStore
           settings.ts            # chrome.storage.sync wrapper
         messaging/
           bus.ts                 # typed chrome.runtime messaging wrapper
       core/
         pipeline.ts              # orchestration, depends only on interfaces
+        batchQueue.ts            # batches visible listing IDs
         text.ts                  # text normalization helpers for signals
         signals/
           index.ts               # registry
@@ -189,6 +198,8 @@ apps/
           shopHeuristics.ts
           imageClassifier.ts     # stretch
         scoring/
+          scorer.ts              # Scorer type
+          unscored.ts            # interim scorer (always unclear) until Phase 6
           score.ts               # signals -> verdict + reasons
       ui/
         Badge.tsx
@@ -431,19 +442,21 @@ Each is its own `SignalModule` file.
 - **Done when:** each signal correct on every fixture.
 
 ### Phase 4: Site adapter + pipeline
-- Shop data arrives with listings: the Worker has no shops route (decided in Phase 2). Update `ItemSource` accordingly (e.g. drop `getShop`, have `getListings` return shops too); ask before changing the interface.
+- Decided: `ItemSource` has a single `getListings` returning listings with shops plus missing/unavailable IDs (no `getShop`).
+- Until Phase 5 the service worker uses an in-memory `VerdictStore`; until Phase 6 it uses an interim scorer that always returns `unclear` (no badge) but keeps signal reasons for logging.
+- `pnpm --filter @handsift/extension build:staging` builds against the staging Worker.
 - `EtsyAdapter` implementing `SiteAdapter`, tested on saved search pages.
 - `WorkerSource` implementing `ItemSource`, typed message bus.
 - `core/pipeline.ts` using interfaces only; tested with fake source + in-memory store.
 - **Done when:** scrolling Etsy logs listing data for visible cards, batched, no request flooding.
 
 ### Phase 5: Client cache
-- `DexieStore` implementing `VerdictStore`, 6-hour TTL from `config.ts`. Settings wrapper.
+- `DexieStore` implementing `VerdictStore`, 6-hour TTL from `config.ts` measured from `checkedAt` (the data's fetch time). Replaces the in-memory store in the service worker. Settings wrapper.
 - **Done when:** revisiting a page makes zero new requests for checked listings.
 
 ### Phase 6: Scoring + UI
 - Scoring must keep `disclosed_ai` (a seller disclosure: fact) separate from inferred levels, so it needs to know which signals are disclosures. Decide how (e.g. a `kind: "disclosure" | "inference"` field on `SignalModule`/`Signal`); ask before changing the interface.
-- `core/scoring/score.ts` loops over the signal registry, weights from `config.ts`, returns level + reasons.
+- `core/scoring/score.ts` loops over the signal registry, weights from `config.ts`, returns level + reasons. Replaces the interim `unscored` scorer (clear any verdicts it stored).
 - Badge + Tooltip in Shadow DOM via `adapter.mountBadge`. Modes: label / blur / hide.
 - Popup: enable toggle, mode, sensitivity, clear cache, stats.
 - **Done when:** badges correct while scrolling, all modes work, tooltips show reasons.

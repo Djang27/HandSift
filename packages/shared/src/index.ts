@@ -1,6 +1,7 @@
 export * from "./api";
 export * from "./config";
 export * from "./etsy/normalize";
+export * from "./messages";
 export * from "./schemas/etsy/listing";
 export * from "./schemas/etsy/responses";
 export * from "./schemas/etsy/shop";

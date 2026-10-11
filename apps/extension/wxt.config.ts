@@ -1,7 +1,9 @@
 import { defineConfig } from "wxt";
 
 function workerUrl(): string | undefined {
-  return import.meta.env.WXT_WORKER_URL as string | undefined;
+  // Typed as string for app code (builds fail without it), but may be unset at config time.
+  const url: string | undefined = import.meta.env.WXT_WORKER_URL;
+  return url;
 }
 
 // Chrome match patterns ignore ports, so localhost:8787 becomes http://localhost/*.

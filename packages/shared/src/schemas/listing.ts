@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+/** An Etsy listing ID as a string: a positive int64, 1 to 19 digits, no leading zero. */
+export const ListingIdSchema = z.string().regex(/^[1-9]\d{0,18}$/);
+
 // Normalized listing used across HandSift. Built from EtsyListing by the Worker.
 export const ListingDataSchema = z.object({
   listingId: z.string(),

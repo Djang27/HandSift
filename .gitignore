@@ -9,6 +9,7 @@ dist/
 .env.*
 !.env.example
 !.env.development
+!.env.staging
 worker-configuration.d.ts
 coverage/
 *.log
