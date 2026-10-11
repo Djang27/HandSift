@@ -53,7 +53,7 @@ Etsy is the first **site adapter**. The architecture must make adding Pinterest 
 | Local database | IndexedDB via Dexie |
 | Settings | chrome.storage.sync |
 | Image classifier (stretch) | transformers.js in an offscreen document |
-| Unit tests | Vitest (extension, shared) + Vitest with Cloudflare's Workers test pool (worker); jsdom for DOM tests; fake-indexeddb for Dexie tests |
+| Unit tests | Vitest (extension, shared) + Vitest with Cloudflare's Workers test pool (worker); jsdom for DOM tests; fake-indexeddb for Dexie tests; Testing Library (+ user-event) for React components |
 | E2E tests (later) | Playwright with the extension loaded |
 | Architecture enforcement | dependency-cruiser (import boundary rules, run in CI) |
 | CI/CD | GitHub Actions: CI on every push/PR, Worker deploys via `cloudflare/wrangler-action`, Chrome Web Store submission via `wxt submit` |
@@ -92,6 +92,8 @@ interface SiteAdapter {
   findItemElements(root: ParentNode): Element[];
   extractItemId(el: Element): string | null;
   mountBadge(el: Element): HTMLElement;   // returns a Shadow DOM host
+  unmountBadge(el: Element): void;
+  setItemDisplay(el: Element, display: "visible" | "blurred" | "hidden"): void;  // site-specific blur/hide
 }
 
 // Where item data comes from (Etsy API via Worker now; could be another source later).
@@ -107,6 +109,7 @@ interface ItemSource {
 // One detection signal. Adding a signal = one new file + register it. Scoring never changes.
 interface SignalModule {
   id: string;
+  kind: "disclosure" | "inference";   // seller said so (fact) vs a clue (guess)
   defaultWeight: number;
   evaluate(input: SignalInput): Signal;   // pure, synchronous where possible
 }
@@ -199,11 +202,13 @@ apps/
           imageClassifier.ts     # stretch
         scoring/
           scorer.ts              # Scorer type
-          unscored.ts            # interim scorer (always unclear) until Phase 6
           score.ts               # signals -> verdict + reasons
+          levels.ts              # level for a score/sensitivity; display-time level
       ui/
-        Badge.tsx
-        Tooltip.tsx
+        badge/                   # Badge.tsx, Tooltip.tsx, badge.css, renderBadge.tsx (Shadow DOM)
+        popup/                   # Popup.tsx, ChoiceGroup.tsx, popup.css
+        pageController.ts        # applies verdicts + settings to cards (badges, blur, hide)
+        contentApp.ts            # content script logic (entrypoint stays wiring only)
   worker/
     src/
       index.ts                   # entry, wiring only
@@ -278,7 +283,7 @@ type ShopData = {
   salesCount: number;
 };
 
-type Signal = { id: string; weight: number; hit: boolean; reason: string };
+type Signal = { id: string; kind: "disclosure" | "inference"; weight: number; hit: boolean; reason: string };
 
 type Verdict = {
   listingId: string;
@@ -456,8 +461,10 @@ Each is its own `SignalModule` file.
 - **Done when:** revisiting a page makes zero new requests for checked listings.
 
 ### Phase 6: Scoring + UI
-- Scoring must keep `disclosed_ai` (a seller disclosure: fact) separate from inferred levels, so it needs to know which signals are disclosures. Decide how (e.g. a `kind: "disclosure" | "inference"` field on `SignalModule`/`Signal`); ask before changing the interface.
-- `core/scoring/score.ts` loops over the signal registry, weights from `config.ts`, returns level + reasons. Replaces the interim `unscored` scorer (clear any verdicts it stored).
+- Decided: signals declare `kind: "disclosure" | "inference"`. Any disclosure hit -> `disclosed_ai`; otherwise inference weights combine as 1 - product(1 - w) and `LIKELY_AI_THRESHOLDS` (per sensitivity, in `config.ts`) decide `likely_ai`. The level is re-derived at display time, so changing sensitivity needs no refetch. A lone `designedBy` never reaches any threshold.
+- `core/scoring/score.ts` replaced the interim scorer; DexieStore v2 clears its verdicts.
+- Decided: `SiteAdapter.setItemDisplay` / `unmountBadge`; Etsy hides a card's grid `<li>` or blurs its photo, restoring Etsy's inline styles after.
+- Etsy's trademark notice is already in the popup (required; pulled forward from Phase 12).
 - Badge + Tooltip in Shadow DOM via `adapter.mountBadge`. Modes: label / blur / hide.
 - Popup: enable toggle, mode, sensitivity, clear cache, stats.
 - **Done when:** badges correct while scrolling, all modes work, tooltips show reasons.

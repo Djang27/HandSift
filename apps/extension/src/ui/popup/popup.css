@@ -1,0 +1,122 @@
+:root {
+  color-scheme: light dark;
+  --fg: #111827;
+  --muted: #6b7280;
+  --bg: #ffffff;
+  --line: #e5e7eb;
+  --accent: #1f2937;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fg: #f3f4f6;
+    --muted: #9ca3af;
+    --bg: #111827;
+    --line: #374151;
+    --accent: #f3f4f6;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font:
+    14px/1.45 system-ui,
+    -apple-system,
+    "Segoe UI",
+    sans-serif;
+}
+
+.popup {
+  width: 320px;
+  padding: 14px 16px;
+}
+
+.popup__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.popup__header h1 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.switch {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-weight: 600;
+}
+
+fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+.popup__settings:disabled {
+  opacity: 0.5;
+}
+.choice-group {
+  margin-top: 12px;
+}
+.choice-group legend {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.choice {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  padding: 2px 0;
+}
+.choice__hint,
+.choice-group__note {
+  color: var(--muted);
+  font-size: 12px;
+}
+.choice-group__note {
+  margin: 4px 0 0;
+}
+
+.popup__stats,
+.popup__cache {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.popup__stats h2 {
+  margin: 0 0 4px;
+  font-size: 13px;
+}
+.popup__stats p {
+  margin: 0;
+}
+.popup__cache {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.popup__cache button {
+  font: inherit;
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg);
+  cursor: pointer;
+}
+
+.popup__footer {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+}
+.popup__footer p {
+  margin: 0 0 6px;
+}
+.popup__notice {
+  font-size: 11px;
+}

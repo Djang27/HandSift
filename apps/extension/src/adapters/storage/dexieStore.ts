@@ -13,6 +13,10 @@ class HandSiftDb extends Dexie {
   constructor(name: string) {
     super(name);
     this.version(1).stores({ verdicts: "listingId, checkedAt" });
+    // v2: drop verdicts saved by the interim Phase 4 scorer (always "unclear").
+    this.version(2)
+      .stores({ verdicts: "listingId, checkedAt" })
+      .upgrade((tx) => tx.table("verdicts").clear());
   }
 }
 

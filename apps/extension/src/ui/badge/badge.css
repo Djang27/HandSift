@@ -1,0 +1,87 @@
+/* Lives inside the badge's Shadow DOM, so Etsy's styles can't reach it and it can't leak. */
+:host {
+  all: initial;
+  display: block;
+  position: relative;
+  height: 0; /* takes no space in the card */
+  z-index: 3;
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    sans-serif;
+}
+
+.handsift-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+}
+
+.pill {
+  border-radius: 999px;
+  padding: 3px 9px;
+  font: 600 12px/1.4 inherit;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+}
+.pill:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+/* A fact: solid. */
+.pill--disclosed_ai {
+  background: #1f2937;
+  color: #fff;
+}
+/* A guess: outlined, so it never looks as certain as a disclosure. */
+.pill--likely_ai {
+  background: #fffbeb;
+  color: #92400e;
+  border-color: #d97706;
+}
+
+.tooltip {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  width: max-content;
+  max-width: 260px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fff;
+  color: #111827;
+  box-shadow: 0 6px 24px rgb(0 0 0 / 0.18);
+  font: 13px/1.45 inherit;
+}
+/* Invisible bridge over the gap, so moving from pill to tooltip never "leaves" the badge. */
+.tooltip::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  left: 0;
+  right: 0;
+  height: 6px;
+}
+.tooltip__summary {
+  margin: 0 0 6px;
+  font-weight: 600;
+}
+.tooltip__reasons {
+  margin: 0;
+  padding-left: 18px;
+}
+.tooltip__reveal {
+  margin-top: 8px;
+  font: 600 12px/1.4 inherit;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #f9fafb;
+  padding: 3px 8px;
+  cursor: pointer;
+}
+.tooltip__brand {
+  margin: 8px 0 0;
+  font-size: 11px;
+  color: #6b7280;
+}
