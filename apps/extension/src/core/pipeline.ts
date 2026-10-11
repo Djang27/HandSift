@@ -43,18 +43,23 @@ export async function checkListings(
       ? await deps.source.getListings(toFetch)
       : { results: [], missing: [], unavailable: [] };
 
+  // Judge new results against when they arrived, on the local clock. The Worker stamps
+  // fetchedAt with Cloudflare's clock, which can be slightly ahead of ours; capping it at
+  // the arrival time keeps everything on one clock and never makes data look newer.
+  const receivedAt = deps.now();
   const requested = new Set(toFetch);
   const unavailable = new Set(lookup.unavailable.filter((id) => requested.has(id)));
   const created: Verdict[] = [];
   for (const result of lookup.results) {
     const id = result.listing.listingId;
     if (!requested.has(id)) continue;
-    if (!isFresh(result.fetchedAt, now)) {
+    const fetchedAt = Math.min(result.fetchedAt, receivedAt);
+    if (!isFresh(fetchedAt, receivedAt)) {
       // Older than Etsy's freshness limit: never show it.
       unavailable.add(id);
       continue;
     }
-    created.push(evaluate(result, deps));
+    created.push(evaluate({ ...result, fetchedAt }, deps));
   }
 
   if (created.length > 0) await deps.store.put(created);
@@ -66,6 +71,7 @@ export async function checkListings(
   };
 }
 
+/** Fresh if fetched within VERDICT_TTL_MS. A stored time after `now` (clock moved back) is stale. */
 function isFresh(fetchedAt: number, now: number): boolean {
   return fetchedAt <= now && now - fetchedAt < VERDICT_TTL_MS;
 }
