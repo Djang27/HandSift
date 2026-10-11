@@ -1,11 +1,57 @@
 # Top level is the default for `wrangler dev` and mirrors staging, so a bare
-# `wrangler deploy` can never hit production.
+# `wrangler deploy` can never hit production. Bindings, vars, and secrets are not
+# inherited by environments, so each env repeats them.
 name = "handsift-api-staging"
 main = "src/index.ts"
 compatibility_date = "2026-10-01"
 
+[observability]
+enabled = true
+
+[secrets]
+required = ["ETSY_API_KEY"]
+
+[vars]
+# Comma-separated Chrome extension IDs allowed by the origin check. Empty = any extension.
+ALLOWED_EXTENSION_IDS = ""
+
+# Per-IP rate limit, per Cloudflare location. period must be 10 or 60 seconds.
+[[ratelimits]]
+name = "RATE_LIMITER"
+namespace_id = "1001"
+simple = { limit = 30, period = 60 }
+
 [env.staging]
 name = "handsift-api-staging"
 
+[env.staging.observability]
+enabled = true
+
+[env.staging.secrets]
+required = ["ETSY_API_KEY"]
+
+[env.staging.vars]
+ALLOWED_EXTENSION_IDS = ""
+
+[[env.staging.ratelimits]]
+name = "RATE_LIMITER"
+namespace_id = "1002"
+simple = { limit = 30, period = 60 }
+
 [env.production]
 name = "handsift-api"
+
+[env.production.observability]
+enabled = true
+
+[env.production.secrets]
+required = ["ETSY_API_KEY"]
+
+[env.production.vars]
+# Set to the Chrome Web Store extension ID once it exists (Phase 12).
+ALLOWED_EXTENSION_IDS = ""
+
+[[env.production.ratelimits]]
+name = "RATE_LIMITER"
+namespace_id = "1003"
+simple = { limit = 30, period = 60 }
