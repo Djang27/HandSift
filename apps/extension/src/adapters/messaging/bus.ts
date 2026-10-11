@@ -26,17 +26,26 @@ export type MessageListener = (
 
 type MessageOf<T extends ExtensionMessage["type"]> = Extract<ExtensionMessage, { type: T }>;
 
+/**
+ * Chrome's error when a tab has no HandSift content script: it isn't an Etsy page, or it
+ * was opened before the extension was (re)loaded. Expected, so not worth a warning.
+ */
+function isNoReceiver(error: unknown): boolean {
+  return error instanceof Error && error.message.includes("Receiving end does not exist");
+}
+
 async function send<R>(
   label: string,
   schema: z.ZodType<R>,
   deliver: () => Promise<unknown>,
+  isExpected: (error: unknown) => boolean = () => false,
 ): Promise<R | null> {
   try {
     const parsed = schema.safeParse(await deliver());
     if (parsed.success) return parsed.data;
     console.warn(`[HandSift] Invalid ${label} reply`, parsed.error.issues);
   } catch (error) {
-    console.warn(`[HandSift] ${label} failed`, error);
+    if (!isExpected(error)) console.warn(`[HandSift] ${label} failed`, error);
   }
   return null;
 }
@@ -120,12 +129,16 @@ export function onClearCache(
 
 // getPageStats: popup -> content script in a tab
 
+/** Null if the tab has no HandSift content script (not Etsy, or opened before HandSift loaded). */
 export function requestPageStats(
   tabId: number,
   tabs: Tabs = browser.tabs,
 ): Promise<PageStats | null> {
-  return send("getPageStats", PageStatsSchema, () =>
-    tabs.sendMessage(tabId, { type: "getPageStats" } satisfies MessageOf<"getPageStats">),
+  return send(
+    "getPageStats",
+    PageStatsSchema,
+    () => tabs.sendMessage(tabId, { type: "getPageStats" } satisfies MessageOf<"getPageStats">),
+    isNoReceiver,
   );
 }
 

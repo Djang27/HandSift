@@ -149,15 +149,29 @@ describe("getPageStats", () => {
     expect(await dispatch({ type: "getPageStats" })).toEqual(STATS);
   });
 
-  it("popup asks the tab and returns null when no content script is there", async () => {
-    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+  it("popup asks the tab for its stats", async () => {
     const tabs = { sendMessage: vi.fn().mockResolvedValue(STATS) } as unknown as Tabs;
     expect(await requestPageStats(7, tabs)).toEqual(STATS);
     expect(tabs.sendMessage).toHaveBeenCalledWith(7, { type: "getPageStats" });
+  });
 
-    const noReceiver = {
-      sendMessage: vi.fn().mockRejectedValue(new Error("Receiving end does not exist")),
+  it("returns null quietly when the tab has no content script (expected)", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const tabs = {
+      sendMessage: vi
+        .fn()
+        .mockRejectedValue(
+          new Error("Could not establish connection. Receiving end does not exist."),
+        ),
     } as unknown as Tabs;
-    expect(await requestPageStats(7, noReceiver)).toBeNull();
+    expect(await requestPageStats(7, tabs)).toBeNull();
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it("still warns about unexpected failures", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const tabs = { sendMessage: vi.fn().mockRejectedValue(new Error("boom")) } as unknown as Tabs;
+    expect(await requestPageStats(7, tabs)).toBeNull();
+    expect(warn).toHaveBeenCalledOnce();
   });
 });
