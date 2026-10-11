@@ -29,3 +29,13 @@ export const MISSING_LISTING_CACHE_TTL_MS = 1 * HOUR_MS;
 
 /** Max listing IDs per /v1/listings request. Matches Etsy's batch cap: one Etsy call per request. */
 export const MAX_IDS_PER_REQUEST = 100;
+
+// Signals
+
+/** Default weight per signal id (0 to 1). Tuned for precision in Phase 9. */
+export const SIGNAL_WEIGHTS = {
+  /** Strong: the seller's own words say AI was used. */
+  descriptionDisclosure: 1,
+  /** Moderate: outside production partner. Common for print-on-demand, never proof alone. */
+  designedBy: 0.25,
+} as const;
