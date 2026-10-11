@@ -6,6 +6,7 @@ export * from "./schemas/etsy/listing";
 export * from "./schemas/etsy/responses";
 export * from "./schemas/etsy/shop";
 export * from "./schemas/listing";
+export * from "./schemas/settings";
 export * from "./schemas/shop";
 export * from "./schemas/signal";
 export * from "./schemas/verdict";

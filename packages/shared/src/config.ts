@@ -1,3 +1,5 @@
+import type { Settings } from "./schemas/settings";
+
 // All tunables live here: weights, thresholds, TTLs, batch sizes, concurrency.
 // Exception: the per-IP request limit is set on the rate limit binding in
 // apps/worker/wrangler.toml, because Cloudflare reads it from there.
@@ -24,6 +26,18 @@ export const EDGE_CACHE_TTL_MS = 2 * HOUR_MS;
 
 /** How long the Worker remembers that Etsy said a listing doesn't exist. */
 export const MISSING_LISTING_CACHE_TTL_MS = 1 * HOUR_MS;
+
+/** How often the client cache deletes expired verdicts (Etsy: don't keep data longer than needed). */
+export const VERDICT_PRUNE_INTERVAL_MS = 1 * HOUR_MS;
+
+// Settings
+
+/** Precision first: on, label only, flag inferred AI conservatively. */
+export const DEFAULT_SETTINGS: Settings = {
+  enabled: true,
+  mode: "label",
+  sensitivity: "conservative",
+};
 
 // Batching
 
