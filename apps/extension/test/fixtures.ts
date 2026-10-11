@@ -16,10 +16,14 @@ const realListingFiles = import.meta.glob<unknown>("../../../fixtures/real/listi
   import: "default",
 });
 
+/** Fixed "fetch time" for fixtures (Oct 10, 2026), so shop ages are deterministic. */
+export const FIXTURE_FETCHED_AT = Date.UTC(2026, 9, 10);
+
 function toSignalInput(raw: unknown): SignalInput {
   const etsy = EtsyListingSchema.parse(raw);
   const listing = toListingData(etsy);
-  return etsy.shop ? { listing, shop: toShopData(etsy.shop) } : { listing };
+  const fetchedAt = FIXTURE_FETCHED_AT;
+  return etsy.shop ? { listing, shop: toShopData(etsy.shop), fetchedAt } : { listing, fetchedAt };
 }
 
 export function syntheticInputs(): SignalInput[] {

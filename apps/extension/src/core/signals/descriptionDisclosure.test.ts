@@ -59,7 +59,10 @@ describe("findDisclosure", () => {
 
 describe("descriptionDisclosure", () => {
   it("checks tags and materials, not just the description", () => {
-    const fromTags = descriptionDisclosure.evaluate({ listing: listing({ tags: ["AI artwork"] }) });
+    const fromTags = descriptionDisclosure.evaluate({
+      listing: listing({ tags: ["AI artwork"] }),
+      fetchedAt: 0,
+    });
     expect(fromTags).toMatchObject({
       hit: true,
       reason: 'Seller disclosed AI in the tags: "ai artwork"',
@@ -67,6 +70,7 @@ describe("descriptionDisclosure", () => {
 
     const fromMaterials = descriptionDisclosure.evaluate({
       listing: listing({ materials: ["PNG", "AI Software"] }),
+      fetchedAt: 0,
     });
     expect(fromMaterials).toMatchObject({
       hit: true,
@@ -77,12 +81,13 @@ describe("descriptionDisclosure", () => {
   it("treats each tag on its own, so tags can't combine into a phrase", () => {
     const signal = descriptionDisclosure.evaluate({
       listing: listing({ tags: ["ai", "art print"] }),
+      fetchedAt: 0,
     });
     expect(signal.hit).toBe(false);
   });
 
   it("returns its id and configured weight whether or not it hits", () => {
-    const miss = descriptionDisclosure.evaluate({ listing: listing({}) });
+    const miss = descriptionDisclosure.evaluate({ listing: listing({}), fetchedAt: 0 });
     expect(miss).toMatchObject({ id: "descriptionDisclosure", weight: 1, hit: false });
   });
 

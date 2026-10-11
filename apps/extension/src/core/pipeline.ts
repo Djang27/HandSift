@@ -77,7 +77,7 @@ function isFresh(fetchedAt: number, now: number): boolean {
 }
 
 function evaluate({ listing, shop, fetchedAt }: V1ListingResult, deps: PipelineDeps): Verdict {
-  const input: SignalInput = shop ? { listing, shop } : { listing };
+  const input: SignalInput = shop ? { listing, shop, fetchedAt } : { listing, fetchedAt };
   try {
     const signals = deps.signals.map((signal) => signal.evaluate(input));
     return deps.score({ listing, signals, checkedAt: fetchedAt });

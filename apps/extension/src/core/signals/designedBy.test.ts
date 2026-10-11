@@ -27,14 +27,16 @@ describe("designedBy", () => {
     ["collective", true, false],
     [null, true, false],
   ] as const)("whoMade=%s, partner=%s -> hit=%s", (whoMade, hasProductionPartner, hit) => {
-    expect(designedBy.evaluate({ listing: listing({ whoMade, hasProductionPartner }) }).hit).toBe(
-      hit,
-    );
+    expect(
+      designedBy.evaluate({ listing: listing({ whoMade, hasProductionPartner }), fetchedAt: 0 })
+        .hit,
+    ).toBe(hit);
   });
 
   it("explains that it is not proof of AI", () => {
     const signal = designedBy.evaluate({
       listing: listing({ whoMade: "someone_else", hasProductionPartner: true }),
+      fetchedAt: 0,
     });
     expect(signal).toMatchObject({ id: "designedBy", weight: 0.25, hit: true });
     expect(signal.reason).toContain("not proof of AI");
