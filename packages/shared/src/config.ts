@@ -1,9 +1,31 @@
 // All tunables live here: weights, thresholds, TTLs, batch sizes, concurrency.
+// Exception: the per-IP request limit is set on the rate limit binding in
+// apps/worker/wrangler.toml, because Cloudflare reads it from there.
 
-const HOUR_MS = 60 * 60 * 1000;
+const SECOND_MS = 1000;
+const HOUR_MS = 60 * 60 * SECOND_MS;
+
+// Freshness
 
 /**
- * How long a stored verdict stays fresh in the client cache. Etsy's API terms forbid
- * displaying listing content more than 6 hours older than Etsy's own site.
+ * Etsy's API terms forbid displaying listing content more than 6 hours older than Etsy's own
+ * site. Every cache layer combined must stay within this, measured from `fetchedAt`.
  */
-export const VERDICT_TTL_MS = 6 * HOUR_MS;
+export const ETSY_LISTING_MAX_AGE_MS = 6 * HOUR_MS;
+
+/** How long a stored verdict stays fresh in the client cache, measured from `fetchedAt`. */
+export const VERDICT_TTL_MS = ETSY_LISTING_MAX_AGE_MS;
+
+/**
+ * How long the Worker's edge cache keeps listing data. Kept well under the 6-hour limit so
+ * clients still get most of the freshness budget.
+ */
+export const EDGE_CACHE_TTL_MS = 2 * HOUR_MS;
+
+/** How long the Worker remembers that Etsy said a listing doesn't exist. */
+export const MISSING_LISTING_CACHE_TTL_MS = 1 * HOUR_MS;
+
+// Batching
+
+/** Max listing IDs per /v1/listings request. Matches Etsy's batch cap: one Etsy call per request. */
+export const MAX_IDS_PER_REQUEST = 100;
