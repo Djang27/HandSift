@@ -8,6 +8,7 @@ import {
   toShopData,
 } from "@handsift/shared";
 import type { SignalInput } from "@handsift/shared/interfaces";
+import { parseLabels } from "../src/core/eval/labels";
 import syntheticBatch from "../../../fixtures/synthetic/etsy/listings-batch.json";
 import labelsCsv from "../../../data/labels.csv?raw";
 
@@ -36,12 +37,7 @@ export function realInputs(): SignalInput[] {
 
 /** Hand labels from data/labels.csv: listing ID -> "ai" | "human". */
 export function labels(): Map<string, "ai" | "human"> {
-  const rows = labelsCsv.trim().split("\n").slice(1);
-  return new Map(
-    rows.map((row) => {
-      const [id = "", label = ""] = row.split(",");
-      if (label !== "ai" && label !== "human") throw new Error(`Bad label row: ${row}`);
-      return [id, label];
-    }),
-  );
+  const { rows, errors } = parseLabels(labelsCsv);
+  if (errors.length > 0) throw new Error(`Bad data/labels.csv: ${errors.join("; ")}`);
+  return new Map(rows.map((row) => [row.id, row.label]));
 }
