@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Synthetic search results</title>
+  </head>
+  <body>
+    <!-- Mirrors the attributes Etsy puts on search-result cards (Oct 2026). Made-up content. -->
+    <ol data-search-results>
+      <li>
+        <div data-listing-id="1000000001" data-shop-id="90000001" data-page-type="search" data-listing-card-v2>
+          <a class="listing-link" data-listing-id="1000000001" href="/listing/1000000001/example">Example one</a>
+          <button data-listing-id="1000000001" aria-label="Add to favorites"></button>
+        </div>
+      </li>
+      <li>
+        <div data-listing-id="1000000004" data-shop-id="90000004" data-page-type="search" data-listing-card-v2>
+          <a class="listing-link" data-listing-id="1000000004" href="/listing/1000000004/example">Example two</a>
+        </div>
+      </li>
+      <li>
+        <!-- The same listing shown again (e.g. as an ad). -->
+        <div data-listing-id="1000000001" data-shop-id="90000001" data-page-type="search" data-listing-card-v2>
+          <a class="listing-link" data-listing-id="1000000001" href="/listing/1000000001/example">Example one again</a>
+        </div>
+      </li>
+      <li>
+        <div data-listing-id="not-a-number" data-listing-card-v2>
+          <a class="listing-link" href="/listing/oops">Broken card</a>
+        </div>
+      </li>
+    </ol>
+    <!-- Elements that carry a listing ID but are not result cards. -->
+    <div data-listing-id="1000000099" class="recently-viewed"></div>
+  </body>
+</html>
