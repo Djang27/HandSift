@@ -1,10 +1,13 @@
 import type { V1ListingsResponse } from "./api";
 import type { ListingData } from "./schemas/listing";
 import type { ShopData } from "./schemas/shop";
-import type { Signal } from "./schemas/signal";
+import type { Signal, SignalKind } from "./schemas/signal";
 import type { Verdict } from "./schemas/verdict";
 
 export type SiteId = "etsy";
+
+/** How a flagged item is shown on the page. */
+export type ItemDisplay = "visible" | "blurred" | "hidden";
 
 // A site the extension runs on. Etsy now, Pinterest/Google Images later.
 export interface SiteAdapter {
@@ -14,6 +17,10 @@ export interface SiteAdapter {
   extractItemId(el: Element): string | null;
   /** Returns a Shadow DOM host. */
   mountBadge(el: Element): HTMLElement;
+  /** Removes the badge host, if any. */
+  unmountBadge(el: Element): void;
+  /** Blurs or hides the item (site-specific DOM), or restores it. */
+  setItemDisplay(el: Element, display: ItemDisplay): void;
 }
 
 /**
@@ -37,6 +44,8 @@ export interface SignalInput {
 // One detection signal. Adding a signal = one new file + register it. Scoring never changes.
 export interface SignalModule {
   id: string;
+  /** Disclosures (facts) and inferences (guesses) are scored separately. */
+  kind: SignalKind;
   defaultWeight: number;
   evaluate(input: SignalInput): Signal;
 }

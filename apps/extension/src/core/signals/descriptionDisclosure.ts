@@ -24,6 +24,7 @@ const FIELDS: readonly { field: Field; text: (l: ListingData) => string }[] = [
 /** Strong signal: the seller's own text says AI was used. */
 export const descriptionDisclosure: SignalModule = {
   id: ID,
+  kind: "disclosure",
   defaultWeight: WEIGHT,
   evaluate({ listing }): Signal {
     for (const { field, text } of FIELDS) {
@@ -31,13 +32,20 @@ export const descriptionDisclosure: SignalModule = {
       if (phrase !== null) {
         return {
           id: ID,
+          kind: "disclosure",
           weight: WEIGHT,
           hit: true,
           reason: `Seller disclosed AI in the ${field}: "${phrase}"`,
         };
       }
     }
-    return { id: ID, weight: WEIGHT, hit: false, reason: "No AI disclosure found" };
+    return {
+      id: ID,
+      kind: "disclosure",
+      weight: WEIGHT,
+      hit: false,
+      reason: "No AI disclosure found",
+    };
   },
 };
 

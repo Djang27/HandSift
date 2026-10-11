@@ -1,4 +1,4 @@
-import type { Settings } from "./schemas/settings";
+import type { Sensitivity, Settings } from "./schemas/settings";
 
 // All tunables live here: weights, thresholds, TTLs, batch sizes, concurrency.
 // Exception: the per-IP request limit is set on the rate limit binding in
@@ -29,6 +29,20 @@ export const MISSING_LISTING_CACHE_TTL_MS = 1 * HOUR_MS;
 
 /** How often the client cache deletes expired verdicts (Etsy: don't keep data longer than needed). */
 export const VERDICT_PRUNE_INTERVAL_MS = 1 * HOUR_MS;
+
+/**
+ * Score at or above which a listing with no disclosure is shown as "likely AI", per
+ * sensitivity. Inference weights combine as 1 - (1 - w1)(1 - w2)...; designedBy alone
+ * (0.25) never reaches any threshold. Tuned for precision in Phase 9.
+ */
+export const LIKELY_AI_THRESHOLDS: Record<Sensitivity, number> = {
+  conservative: 0.8,
+  balanced: 0.6,
+  aggressive: 0.4,
+};
+
+/** Blur radius for listing photos in blur mode. */
+export const BLUR_RADIUS_PX = 14;
 
 // Settings
 

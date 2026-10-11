@@ -12,11 +12,13 @@ const WEIGHT = SIGNAL_WEIGHTS.designedBy;
  */
 export const designedBy: SignalModule = {
   id: ID,
+  kind: "inference",
   defaultWeight: WEIGHT,
   evaluate({ listing }): Signal {
     const hit = listing.whoMade === "someone_else" && listing.hasProductionPartner;
     return {
       id: ID,
+      kind: "inference",
       weight: WEIGHT,
       hit,
       reason: hit

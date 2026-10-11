@@ -52,6 +52,51 @@ describe("etsyAdapter on the synthetic search page", () => {
   });
 });
 
+describe("etsyAdapter display", () => {
+  function gridWithCard(): { li: HTMLLIElement; card: Element; img: HTMLImageElement } {
+    const doc = parse(
+      `<ul><li style="display: flex"><div data-listing-card-v2 data-listing-id="1"><img src="x.jpg" style="filter: saturate(1.1)"></div></li></ul>`,
+    );
+    const [card] = etsyAdapter.findItemElements(doc);
+    const li = doc.querySelector("li");
+    const img = doc.querySelector("img");
+    if (!card || !li || !img) throw new Error("bad fixture");
+    return { li, card, img };
+  }
+
+  it("hides the whole grid cell and restores Etsy's own display afterwards", () => {
+    const { li, card } = gridWithCard();
+    etsyAdapter.setItemDisplay(card, "hidden");
+    expect(li.style.display).toBe("none");
+    etsyAdapter.setItemDisplay(card, "visible");
+    expect(li.style.display).toBe("flex");
+  });
+
+  it("blurs the photo and restores its original filter", () => {
+    const { card, img } = gridWithCard();
+    etsyAdapter.setItemDisplay(card, "blurred");
+    expect(img.style.filter).toMatch(/^blur\(/);
+    etsyAdapter.setItemDisplay(card, "blurred"); // idempotent
+    etsyAdapter.setItemDisplay(card, "visible");
+    expect(img.style.filter).toBe("saturate(1.1)");
+  });
+
+  it("switching between hidden and blurred keeps only the current effect", () => {
+    const { li, card, img } = gridWithCard();
+    etsyAdapter.setItemDisplay(card, "hidden");
+    etsyAdapter.setItemDisplay(card, "blurred");
+    expect(li.style.display).toBe("flex");
+    expect(img.style.filter).toMatch(/^blur\(/);
+  });
+
+  it("unmounts the badge host", () => {
+    const { card } = gridWithCard();
+    etsyAdapter.mountBadge(card);
+    etsyAdapter.unmountBadge(card);
+    expect(card.querySelector("handsift-badge")).toBeNull();
+  });
+});
+
 describe.skipIf(Object.keys(realPages).length === 0)(
   "etsyAdapter on real saved search pages",
   () => {

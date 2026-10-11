@@ -131,6 +131,7 @@ describe("checkListings", () => {
   it("returns an unclear verdict instead of throwing when a signal fails", async () => {
     const broken: SignalModule = {
       id: "broken",
+      kind: "inference",
       defaultWeight: 1,
       evaluate: () => {
         throw new Error("boom");
