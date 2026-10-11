@@ -8,6 +8,7 @@
     "dev": "wxt",
     "build": "wxt build",
     "build:dev": "wxt build --mode development",
+    "build:staging": "wxt build --mode staging",
     "zip": "wxt zip",
     "typecheck": "wxt prepare && tsc --noEmit",
     "test": "vitest run --passWithNoTests"
