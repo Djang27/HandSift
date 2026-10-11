@@ -44,7 +44,7 @@ Etsy is the first **site adapter**. The architecture must make adding Pinterest 
 | Language | TypeScript (strict mode) everywhere, including config files |
 | Shared contracts | Zod schemas + inferred types in `packages/shared`, used by both apps |
 | UI (popup + badges) | React (via `@wxt-dev/module-react`), badges rendered inside Shadow DOM |
-| Page observation | MutationObserver + IntersectionObserver |
+| Page observation | MutationObserver + `visibilitychange` (whole page per batch; see Scaling plan) |
 | Data source | Etsy Open API v3 (public listing + shop endpoints, `x-api-key` auth) |
 | API proxy + shared cache | Cloudflare Workers (Wrangler), Cache API in front of D1 (Phase 10) |
 | Shared database | Cloudflare D1 (SQLite), raw SQL with bound parameters, migrations via `wrangler d1 migrations` |
@@ -138,7 +138,7 @@ interface VerdictStore {
 ```
 Etsy page
   └─ Content script (entrypoint)
-       - uses EtsyAdapter to find cards + extract listing IDs (visible only)
+       - uses EtsyAdapter to find cards + extract listing IDs (every card on the page, once the tab is visible)
        - sends IDs to service worker, mounts badges from verdicts
             │  typed messages (packages/shared/messages)
             ▼
@@ -176,7 +176,7 @@ apps/
             etsyAdapter.ts       # implements SiteAdapter
             selectors.ts         # Etsy DOM selectors (only place they exist)
         page/
-          observeVisibleItems.ts # IntersectionObserver + MutationObserver, site agnostic
+          observePageItems.ts    # reports every card on a visible page, site agnostic
         source/
           workerSource.ts        # implements ItemSource, calls the Worker
           loggingSource.ts       # logs fetched listing data (dev visibility)
@@ -298,7 +298,7 @@ type Verdict = {
 The Worker itself scales automatically; the real bottleneck is **Etsy's API quota**, since every user shares one API key. So the design minimizes Etsy calls at every layer:
 
 1. **Client cache (Dexie):** a user doesn't re-fetch a listing checked within the last **6 hours** (Etsy's freshness limit for listing content; see Etsy API Terms compliance).
-2. **Batching:** one Worker request per batch of visible listings, not per listing.
+2. **Batching:** one Worker request per page of listings (up to 100), not per listing or per visible row. Etsy charges per call, not per listing, so requesting the whole page at once costs 1 call instead of ~15-20 (found in Phase 4 testing). Hidden tabs request nothing until shown.
 3. **Worker edge cache (Cache API):** repeated lookups served without hitting Etsy. Note: this cache is per Cloudflare data center, not global, and **only works on a custom domain** (it's a no-op on `*.workers.dev`). Staging runs on workers.dev, so its real shared cache arrives with D1 in Phase 10; give production a custom domain before launch.
 4. **Shared global cache (Phase 10, D1):** once one user checks a listing or shop, every user gets it free. Lookup order is Cache API (fastest, per data center) -> D1 (global) -> Etsy. D1 stores **only the normalized fields the signals need (not raw Etsy JSON, not verdicts)**, so tuning scoring never requires refetching, Etsy's minimum-data rule is respected, and no user data is ever stored. Entries expire within Etsy's freshness limits (6 h listings, 24 h shops).
 5. **Graceful degradation:** if Etsy returns 429 or errors, the Worker still returns what it has cached and lists the other IDs as `unavailable`; the extension shows nothing new for those (cached verdicts still display) and backs off. Never a wrong badge.
