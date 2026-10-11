@@ -78,4 +78,30 @@ export const SIGNAL_WEIGHTS = {
   descriptionDisclosure: 1,
   /** Moderate: outside production partner. Common for print-on-demand, never proof alone. */
   designedBy: 0.25,
+  /** Weak to moderate: shop-level clues. The most the combined clues can add. */
+  shopHeuristics: 0.55,
+} as const;
+
+/**
+ * shopHeuristics clues. Each is weak alone; they combine as 1 - (1 - w1)(1 - w2)...,
+ * capped at SIGNAL_WEIGHTS.shopHeuristics. Minimum listing counts keep small shops out.
+ */
+export const SHOP_HEURISTICS = {
+  /** "New shop with a huge catalog": opened within this many days... */
+  newShopMaxAgeDays: 180,
+  /** ...and already has at least this many active listings. */
+  bulkMinListings: 300,
+  newBulkWeight: 0.35,
+
+  /** "Mostly digital downloads": at least this share of listings digital... */
+  digitalMinShare: 0.9,
+  /** ...across at least this many listings. */
+  digitalMinListings: 50,
+  digitalWeight: 0.15,
+
+  /** "Few sales for its size": fewer sales per active listing than this... */
+  lowSalesMaxPerListing: 0.1,
+  /** ...across at least this many listings. */
+  lowSalesMinListings: 100,
+  lowSalesWeight: 0.2,
 } as const;

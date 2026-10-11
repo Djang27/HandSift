@@ -199,6 +199,7 @@ apps/
           disclosurePatterns.ts  # phrase + negation patterns
           designedBy.ts
           shopHeuristics.ts
+          shopHeuristics.ts
           imageClassifier.ts     # stretch
         scoring/
           scorer.ts              # Scorer type
@@ -401,7 +402,7 @@ Each is its own `SignalModule` file.
 1. **`descriptionDisclosure`** (strong). Scans the seller's own text: title, description (entities decoded), tags, and materials (each tag/material on its own). Phrases like: AI-generated, AI art, AI-assisted, created with AI, AI software, Midjourney, Stable Diffusion, DALL-E. For precision, a bare "AI" never counts (digital downloads list Adobe Illustrator "AI" files), and Firefly/Leonardo/prompt only count with AI context ("Adobe Firefly", "Leonardo AI", "AI prompt"). Negations and contrasts in the same sentence cancel a match ("not AI", "AI-free", "unlike AI art").
 2. ~~`aiFlag`~~ **Dropped.** Phase 1 found no AI checkbox field in the API (see `docs/etsy-api.md`).
 3. **`designedBy`** (moderate only). Hits when `whoMade = "someone_else"` and the listing has a production partner. This also covers ordinary print-on-demand, so it is NOT proof of AI alone. Some "Designed by" listings look identical to handmade in the API; those are simply missed.
-4. **`shopHeuristics`** (weak to moderate): new shop with huge active listing count, catalog dominated by digital downloads, low sales relative to listings.
+4. **`shopHeuristics`** (weak to moderate, inference): new shop with a huge active listing count, catalog dominated by digital downloads, low sales relative to listings. Each clue is weak; they combine as 1 - product(1 - w), capped at 0.55. Thresholds and clue weights in `SHOP_HEURISTICS` (`config.ts`); minimum listing counts keep small shops out. Shop age uses `SignalInput.fetchedAt`.
 5. **`imageClassifier`** (weak, stretch). Only on already-ambiguous listings.
 
 ---
@@ -470,7 +471,8 @@ Each is its own `SignalModule` file.
 - **Done when:** badges correct while scrolling, all modes work, tooltips show reasons.
 
 ### Phase 7: Shop heuristics
-- `shopHeuristics` signal. Shop data arrives with each listing batch (`includes=Shop`), so there are no separate shop fetches; cache it for at most 24 hours.
+- `shopHeuristics` signal. Shop data arrives with each listing batch (`includes=Shop`), so there are no separate shop fetches; cache it for at most 24 hours (it shares the listing's 6-hour cache today, well within that).
+- Decided: `SignalInput` gains `fetchedAt` (reference time for shop age; signals stay pure).
 - **Done when:** shop reasons appear in tooltips; no duplicate shop fetches.
 
 ### Phase 8: Eval harness

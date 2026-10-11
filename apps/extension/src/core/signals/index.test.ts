@@ -25,7 +25,7 @@ describe("signal registry", () => {
 
   it("every signal handles empty data without throwing and reports its own id", () => {
     for (const s of SIGNALS) {
-      const signal = s.evaluate({ listing: EMPTY });
+      const signal = s.evaluate({ listing: EMPTY, fetchedAt: 0 });
       expect(signal).toMatchObject({ id: s.id, kind: s.kind, hit: false });
       expect(signal.reason.length).toBeGreaterThan(0);
     }

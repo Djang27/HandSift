@@ -39,6 +39,8 @@ export interface ItemSource {
 export interface SignalInput {
   listing: ListingData;
   shop?: ShopData;
+  /** When the data was fetched (Unix ms): the reference time for things like shop age. */
+  fetchedAt: number;
 }
 
 // One detection signal. Adding a signal = one new file + register it. Scoring never changes.
