@@ -48,7 +48,8 @@ Etsy is the first **site adapter**. The architecture must make adding Pinterest 
 | Data source | Etsy Open API v3 (public listing + shop endpoints, `x-api-key` auth) |
 | API proxy + shared cache | Cloudflare Workers (Wrangler), Cache API in front of D1 (Phase 10) |
 | Shared database | Cloudflare D1 (SQLite), raw SQL with bound parameters, migrations via `wrangler d1 migrations` |
-| Request batching/throttling | p-limit in the extension, batch endpoints where available |
+| Request batching/throttling | p-limit in the extension, Etsy's batch listings endpoint (100 IDs per call) |
+| Scripts | TypeScript run with jiti (`scripts/`) |
 | Local database | IndexedDB via Dexie |
 | Settings | chrome.storage.sync |
 | Image classifier (stretch) | transformers.js in an offscreen document |
@@ -183,7 +184,6 @@ apps/
         signals/
           index.ts               # registry
           descriptionDisclosure.ts
-          aiFlag.ts
           designedBy.ts
           shopHeuristics.ts
           imageClassifier.ts     # stretch
@@ -248,11 +248,21 @@ type ListingData = {
   listingId: string;
   shopId: string;
   title: string;
-  description: string;
-  whoMade: "i_did" | "someone_else" | "collective" | string;
+  description: string;          // HTML entities decoded
   tags: string[];
   materials: string[];
-  aiDisclosedFlag?: boolean;  // only if the API exposes Etsy's AI checkbox
+  whoMade: string | null;       // "i_did" | "someone_else" | "collective"
+  listingType: string;          // "physical" | "download" | "both"
+  hasProductionPartner: boolean;
+};
+// No AI flag: Etsy's API doesn't expose the AI checkbox (Phase 1 finding).
+
+type ShopData = {
+  shopId: string;
+  createdAt: number;            // ms
+  activeListingCount: number;
+  digitalListingCount: number;
+  salesCount: number;
 };
 
 type Signal = { id: string; weight: number; hit: boolean; reason: string };
@@ -363,9 +373,9 @@ From Etsy's API Terms of Use (last updated Aug 18, 2026). Record details and any
 
 Each is its own `SignalModule` file.
 
-1. **`descriptionDisclosure`** (strong). Regex for terms like: AI-generated, AI art, AI-assisted, created with AI, Midjourney, Stable Diffusion, DALL-E, Firefly, Leonardo, prompt. Handle negation ("not AI", "no AI used").
-2. **`aiFlag`** (strong). Only if the API exposes Etsy's AI checkbox. Verify in Phase 1; omit if not exposed.
-3. **`designedBy`** (moderate only). Figure out in Phase 1 how the API represents it. It also covers outside production partners, so NOT proof of AI alone.
+1. **`descriptionDisclosure`** (strong). Scans the seller's own text: title, description (entities decoded), tags, and materials. Regex for terms like: AI-generated, AI art, AI-assisted, created with AI, AI software, Midjourney, Stable Diffusion, DALL-E, Firefly, Leonardo, prompt. Handle negation ("not AI", "no AI used").
+2. ~~`aiFlag`~~ **Dropped.** Phase 1 found no AI checkbox field in the API (see `docs/etsy-api.md`).
+3. **`designedBy`** (moderate only). Hits when `whoMade = "someone_else"` and the listing has a production partner. This also covers ordinary print-on-demand, so it is NOT proof of AI alone. Some "Designed by" listings look identical to handmade in the API; those are simply missed.
 4. **`shopHeuristics`** (weak to moderate): new shop with huge active listing count, catalog dominated by digital downloads, low sales relative to listings.
 5. **`imageClassifier`** (weak, stretch). Only on already-ambiguous listings.
 
@@ -395,6 +405,8 @@ Each is its own `SignalModule` file.
 
 ### Phase 2: Worker
 - Modules per the file structure: router, handlers, `etsyClient`, cache interface + Cache API impl, middleware (validate, rateLimit, origin), `log.ts`.
+- `etsyClient` uses only `GET /v3/application/listings/batch?listing_ids=...&includes=Shop` (max 100 IDs per call; shop data comes attached, so no separate shop calls). If any ID is missing, Etsy fails the whole batch with a 404 naming the missing IDs: drop them and retry once; if the error can't be parsed, return no data (never guess). Log Etsy's `x-remaining-today` header. Normalization (raw Etsy -> `ListingData`/`ShopData`, decoding description entities) happens here.
+- Stay under Etsy's 5 requests/second across all requests; back off on Etsy 429s.
 - All API routes under `/v1/` (see Security, versioning, and observability).
 - Per-IP rate limiting via the Workers Rate Limiting binding (required). Strict input validation (numeric IDs, max batch size).
 - Structured JSON logging + `[observability] enabled = true`.
@@ -405,11 +417,13 @@ Each is its own `SignalModule` file.
 - **Done when:** merging to `main` auto-deploys staging, smoke test passes, staging returns real data for fixture IDs.
 
 ### Phase 3: Signals
-- `descriptionDisclosure`, `aiFlag` (if applicable), `designedBy` as `SignalModule`s in the registry.
+- `descriptionDisclosure` and `designedBy` as `SignalModule`s in the registry.
 - Unit tests per signal against fixtures.
 - **Done when:** each signal correct on every fixture.
 
 ### Phase 4: Site adapter + pipeline
+- **Gated:** needs Etsy's Section 5 written authorization (see Etsy API Terms compliance).
+- Shop data now arrives with listings (Phase 1 finding). Decide whether `ItemSource.getShop` is still needed or whether `getListings` should return shops too; ask before changing the interface.
 - `EtsyAdapter` implementing `SiteAdapter`, tested on saved search pages.
 - `WorkerSource` implementing `ItemSource`, typed message bus.
 - `core/pipeline.ts` using interfaces only; tested with fake source + in-memory store.
@@ -426,7 +440,7 @@ Each is its own `SignalModule` file.
 - **Done when:** badges correct while scrolling, all modes work, tooltips show reasons.
 
 ### Phase 7: Shop heuristics
-- `shopHeuristics` signal, shop data fetched once per shop and cached for at most 24 hours.
+- `shopHeuristics` signal. Shop data arrives with each listing batch (`includes=Shop`), so there are no separate shop fetches; cache it for at most 24 hours.
 - **Done when:** shop reasons appear in tooltips; no duplicate shop fetches.
 
 ### Phase 8: Eval harness
