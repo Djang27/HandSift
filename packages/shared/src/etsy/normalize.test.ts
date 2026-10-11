@@ -1,16 +1,14 @@
-import {
-  EtsyBatchResponseSchema,
-  EtsyListingSchema,
-  ListingDataSchema,
-  ShopDataSchema,
-} from "@handsift/shared";
 import { describe, expect, it } from "vitest";
-import batchFixture from "../../../../fixtures/synthetic/etsy/listings-batch.json";
+import { readSynthetic } from "../../test/fixtures";
+import { EtsyListingSchema } from "../schemas/etsy/listing";
+import { EtsyBatchResponseSchema } from "../schemas/etsy/responses";
+import { ListingDataSchema } from "../schemas/listing";
+import { ShopDataSchema } from "../schemas/shop";
 import { toListingData, toShopData } from "./normalize";
 
-const listings = EtsyBatchResponseSchema.parse(batchFixture).results.map((raw) =>
-  EtsyListingSchema.parse(raw),
-);
+const listings = EtsyBatchResponseSchema.parse(
+  readSynthetic("etsy/listings-batch.json"),
+).results.map((raw) => EtsyListingSchema.parse(raw));
 
 describe("normalize", () => {
   it("produces valid ListingData and ShopData for every synthetic listing", () => {

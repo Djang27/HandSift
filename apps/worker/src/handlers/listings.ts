@@ -1,7 +1,12 @@
-import { VERSION_HEADER, type V1ListingResult, type V1ListingsResponse } from "@handsift/shared";
+import {
+  toListingData,
+  toShopData,
+  VERSION_HEADER,
+  type V1ListingResult,
+  type V1ListingsResponse,
+} from "@handsift/shared";
 import type { CacheEntry, ListingCache } from "../cache/cache";
 import { EtsyRateLimitedError, type EtsyBatchResult } from "../etsy/etsyClient";
-import { toListingData, toShopData } from "../etsy/normalize";
 import { logError, logEvent } from "../log";
 import { parseListingsQuery } from "../middleware/validate";
 import { errorResponse } from "../responses";

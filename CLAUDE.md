@@ -180,9 +180,11 @@ apps/
           bus.ts                 # typed chrome.runtime messaging wrapper
       core/
         pipeline.ts              # orchestration, depends only on interfaces
+        text.ts                  # text normalization helpers for signals
         signals/
           index.ts               # registry
           descriptionDisclosure.ts
+          disclosurePatterns.ts  # phrase + negation patterns
           designedBy.ts
           shopHeuristics.ts
           imageClassifier.ts     # stretch
@@ -201,8 +203,6 @@ apps/
         health.ts
       etsy/
         etsyClient.ts            # only file that talks to Etsy
-        normalize.ts             # raw Etsy -> ListingData/ShopData
-        decodeEntities.ts
       cache/
         cache.ts                 # cache interface
         edgeCache.ts             # Cache API impl
@@ -220,7 +220,8 @@ apps/
 packages/
   shared/
     src/
-      schemas/                   # Zod: listing, shop, verdict, signal
+      schemas/                   # Zod: listing, shop, verdict, signal, raw Etsy
+      etsy/                      # raw Etsy -> ListingData/ShopData (used by Worker, tests, eval)
       messages.ts                # extension message contracts
       api.ts                     # Worker request/response contracts
       config.ts                  # all tunables
@@ -380,7 +381,7 @@ From Etsy's API Terms of Use (last updated Aug 18, 2026). Record details and any
 
 Each is its own `SignalModule` file.
 
-1. **`descriptionDisclosure`** (strong). Scans the seller's own text: title, description (entities decoded), tags, and materials. Regex for terms like: AI-generated, AI art, AI-assisted, created with AI, AI software, Midjourney, Stable Diffusion, DALL-E, Firefly, Leonardo, prompt. Handle negation ("not AI", "no AI used").
+1. **`descriptionDisclosure`** (strong). Scans the seller's own text: title, description (entities decoded), tags, and materials (each tag/material on its own). Phrases like: AI-generated, AI art, AI-assisted, created with AI, AI software, Midjourney, Stable Diffusion, DALL-E. For precision, a bare "AI" never counts (digital downloads list Adobe Illustrator "AI" files), and Firefly/Leonardo/prompt only count with AI context ("Adobe Firefly", "Leonardo AI", "AI prompt"). Negations and contrasts in the same sentence cancel a match ("not AI", "AI-free", "unlike AI art").
 2. ~~`aiFlag`~~ **Dropped.** Phase 1 found no AI checkbox field in the API (see `docs/etsy-api.md`).
 3. **`designedBy`** (moderate only). Hits when `whoMade = "someone_else"` and the listing has a production partner. This also covers ordinary print-on-demand, so it is NOT proof of AI alone. Some "Designed by" listings look identical to handmade in the API; those are simply missed.
 4. **`shopHeuristics`** (weak to moderate): new shop with huge active listing count, catalog dominated by digital downloads, low sales relative to listings.
@@ -441,6 +442,7 @@ Each is its own `SignalModule` file.
 - **Done when:** revisiting a page makes zero new requests for checked listings.
 
 ### Phase 6: Scoring + UI
+- Scoring must keep `disclosed_ai` (a seller disclosure: fact) separate from inferred levels, so it needs to know which signals are disclosures. Decide how (e.g. a `kind: "disclosure" | "inference"` field on `SignalModule`/`Signal`); ask before changing the interface.
 - `core/scoring/score.ts` loops over the signal registry, weights from `config.ts`, returns level + reasons.
 - Badge + Tooltip in Shadow DOM via `adapter.mountBadge`. Modes: label / blur / hide.
 - Popup: enable toggle, mode, sensitivity, clear cache, stats.
