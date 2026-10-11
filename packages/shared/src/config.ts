@@ -30,11 +30,8 @@ export const MISSING_LISTING_CACHE_TTL_MS = 1 * HOUR_MS;
 /** Max listing IDs per /v1/listings request. Matches Etsy's batch cap: one Etsy call per request. */
 export const MAX_IDS_PER_REQUEST = 100;
 
-/** How long the content script collects newly visible listing IDs before sending a batch. */
+/** How long the content script collects new listing IDs before sending a batch. */
 export const BATCH_DELAY_MS = 300;
-
-/** Start checking cards this many pixels before they scroll into view. */
-export const VISIBILITY_MARGIN_PX = 200;
 
 /** After the page changes (infinite scroll, filters), wait this long before rescanning. */
 export const PAGE_SCAN_DEBOUNCE_MS = 150;
