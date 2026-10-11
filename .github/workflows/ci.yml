@@ -1,7 +1,9 @@
 name: CI
 
 on:
+  # Branch pushes are covered by their pull request; this avoids running CI twice per PR.
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
