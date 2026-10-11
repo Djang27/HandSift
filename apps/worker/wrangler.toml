@@ -4,6 +4,10 @@
 name = "handsift-api-staging"
 main = "src/index.ts"
 compatibility_date = "2026-10-01"
+# Served on *.workers.dev until production gets a custom domain. Preview URLs (public
+# per-version URLs) are off: nothing should reach the API except through the main URL.
+workers_dev = true
+preview_urls = false
 
 [observability]
 enabled = true
@@ -23,6 +27,8 @@ simple = { limit = 30, period = 60 }
 
 [env.staging]
 name = "handsift-api-staging"
+workers_dev = true
+preview_urls = false
 
 [env.staging.observability]
 enabled = true
@@ -40,6 +46,8 @@ simple = { limit = 30, period = 60 }
 
 [env.production]
 name = "handsift-api"
+workers_dev = true
+preview_urls = false
 
 [env.production.observability]
 enabled = true
