@@ -33,6 +33,12 @@ export const MAX_IDS_PER_REQUEST = 100;
 /** How long the content script collects newly visible listing IDs before sending a batch. */
 export const BATCH_DELAY_MS = 300;
 
+/** Start checking cards this many pixels before they scroll into view. */
+export const VISIBILITY_MARGIN_PX = 200;
+
+/** After the page changes (infinite scroll, filters), wait this long before rescanning. */
+export const PAGE_SCAN_DEBOUNCE_MS = 150;
+
 /** Max concurrent requests from the extension to the Worker. */
 export const WORKER_CONCURRENCY = 2;
 
