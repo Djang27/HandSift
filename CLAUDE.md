@@ -291,6 +291,11 @@ The Worker itself scales automatically; the real bottleneck is **Etsy's API quot
 4. **Shared global cache (Phase 10, D1):** once one user checks a listing or shop, every user gets it free. Lookup order is Cache API (fastest, per data center) -> D1 (global) -> Etsy. D1 stores **only the normalized fields the signals need (not raw Etsy JSON, not verdicts)**, so tuning scoring never requires refetching, Etsy's minimum-data rule is respected, and no user data is ever stored. Entries expire within Etsy's freshness limits (6 h listings, 24 h shops).
 5. **Graceful degradation:** if Etsy returns 429 or errors, the Worker still returns what it has cached and lists the other IDs as `unavailable`; the extension shows nothing new for those (cached verdicts still display) and backs off. Never a wrong badge.
 6. **Global Etsy budget (later):** per-IP limits don't stop abuse spread across many IPs. Before launch, stop calling Etsy once `x-remaining-today` drops below a reserve (cache-only mode).
+7. **When to add a queue (not needed yet):** lookups are interactive, so overload is handled by shedding load (cached results + `unavailable`, client backs off), not queuing. The extension's batching (Phase 4) and request coalescing (Phase 10) cover current scale. Add more only when Worker logs show the need:
+   - frequent `etsy_rate_limited` outcomes: a **Durable Object** as a global pacer keeping all Etsy calls under 5/s (today each Worker instance acts alone);
+   - daily quota running low: the same Durable Object **merging IDs from many users' requests into one 100-ID Etsy call**;
+   - popular listings repeatedly expiring: **Cloudflare Queues** to refresh them in the background.
+   All of these slot in behind `etsyClient` and the cache interface; handlers don't change.
 
 ---
 
