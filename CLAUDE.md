@@ -327,8 +327,9 @@ The Worker itself scales automatically; the real bottleneck is **Etsy's API quot
 
 From Etsy's API Terms of Use (last updated Aug 18, 2026). Record details and any later changes in `docs/etsy-api.md`.
 
-- **Browser-extension authorization (Section 5).** The terms prohibit browser extensions that access or analyze Etsy data "unless expressly authorized in writing by Etsy". Keep that written authorization on file (and note it in `docs/etsy-api.md`) **before Phase 4**, the first phase where the extension touches Etsy data.
-- **Machine learning / analytics (Section 5)** also needs written authorization. Phase 8 (eval) and Phase 11 (image classifier) are gated on it.
+- **Browser-extension authorization (Section 5): granted in writing (Oct 2026)**, including public distribution, for the app as described to Etsy (disclosed / possibly-AI labels with reasons, label / blur / hide). Details in `docs/etsy-api.md`.
+- **Machine learning / analytics (Section 5): granted in writing (Oct 2026)** for the on-device image check (Phase 11) and accuracy eval (Phase 8).
+- Anything beyond what Etsy approved (new data sources, new modes, materially different behavior) goes to Etsy before it ships.
 - **Freshness:** never display listing content more than **6 hours** old, or other Etsy content (shops) more than **24 hours** old. Never cache longer than reasonably necessary. All TTLs in `config.ts` must respect this.
 - **Minimum data:** request and store only the fields the signals use.
 - **Auth:** the `x-api-key` header is `<keystring>:<shared_secret>`. Store that full value as the `ETSY_API_KEY` Worker secret. One key, one app; never create extra keys to get around rate limits.
@@ -430,7 +431,6 @@ Each is its own `SignalModule` file.
 - **Done when:** each signal correct on every fixture.
 
 ### Phase 4: Site adapter + pipeline
-- **Gated:** needs Etsy's Section 5 written authorization (see Etsy API Terms compliance).
 - Shop data arrives with listings: the Worker has no shops route (decided in Phase 2). Update `ItemSource` accordingly (e.g. drop `getShop`, have `getListings` return shops too); ask before changing the interface.
 - `EtsyAdapter` implementing `SiteAdapter`, tested on saved search pages.
 - `WorkerSource` implementing `ItemSource`, typed message bus.
@@ -453,7 +453,6 @@ Each is its own `SignalModule` file.
 - **Done when:** shop reasons appear in tooltips; no duplicate shop fetches.
 
 ### Phase 8: Eval harness
-- **Gated:** needs Etsy's written authorization for analytics use (see Etsy API Terms compliance).
 - `data/labels.csv`: `listing_id, label (ai|human), source_of_label`.
 - `scripts/eval.ts` runs `core/` directly in Node on labeled data, prints precision, recall, confusion matrix at several thresholds.
 - **Manual step for me:** grow labels toward 200+.
@@ -491,7 +490,6 @@ Each is its own `SignalModule` file.
 - **Done when:** a second "user" (fresh browser profile) gets results with zero Etsy calls, and expired rows are cleaned up.
 
 ### Phase 11 (stretch): Image classifier
-- **Gated:** needs Etsy's written authorization for machine-learning use (see Etsy API Terms compliance).
 - `imageClassifier` SignalModule; model runs in offscreen document behind an adapter.
 - Only in ambiguous score range, feature-flagged off. Keep only if eval improves.
 

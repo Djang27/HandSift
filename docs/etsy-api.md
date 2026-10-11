@@ -6,11 +6,16 @@ public.
 
 ## Access status
 
-| Item                                                | Status                                                            |
-| --------------------------------------------------- | ----------------------------------------------------------------- |
-| App approved by Etsy                                | Yes, Oct 8, 2026                                                  |
-| Section 5 written authorization (browser extension) | Requested, not yet confirmed in writing. Required before Phase 4. |
-| ML / analytics authorization (Phases 8, 11)         | Asked about, not yet confirmed                                    |
+Etsy's emails are marked confidential, so they are not quoted here. Daniel keeps them on file.
+
+| Item                                                  | Status                                                                                                                                                                                   |
+| ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| App approved by Etsy                                  | Yes, Oct 8, 2026                                                                                                                                                                         |
+| Section 5 written authorization (browser extension)   | **Granted** (Oct 2026): HandSift may operate as a Chrome extension that accesses and analyzes Etsy data via the API, and may be distributed to the general public, as described to Etsy. |
+| Features described to Etsy                            | "Seller disclosed AI" and "Possibly AI" labels with reasons; label / blur / hide modes; caching within the 6 h / 24 h limits.                                                            |
+| ML / analytics (on-device image check, accuracy eval) | **Granted** in writing (Oct 2026), per Daniel.                                                                                                                                           |
+
+Anything beyond what was described (new signals that use other data, new modes) must go to Etsy for approval before it ships.
 
 ## Authentication
 
@@ -114,4 +119,3 @@ covers ordinary print-on-demand too, so it is never proof of AI on its own.
 
 - Do `sold_out` / `inactive` listings come back from the batch endpoint (with `state`) or count
   as missing (404)? Test when a fixture listing changes state.
-- Section 5 written authorization (see Access status).
