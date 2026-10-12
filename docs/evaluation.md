@@ -38,7 +38,7 @@ listing_id,label,source_of_label
   measure recall), clear handmade, and tricky human listings (print-on-demand, digital
   artists, vintage, sellers with anti-AI statements), across shops of different sizes and
   ages.
-- The file holds listing IDs and labels only, no Etsy content, so it's safe to commit.
+- Keep notes short and in your own words. Brief references ("title says AI generated") are fine; don't paste whole descriptions, since the repo is public.
 - Bad rows (malformed IDs, unknown labels, duplicates) make `pnpm eval` stop and list the
   line numbers. A test also checks the committed file is valid.
 - Listings that disappear from Etsy are reported as "gone"; remove them from the file.
