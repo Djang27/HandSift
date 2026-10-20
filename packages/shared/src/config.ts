@@ -24,6 +24,12 @@ export const VERDICT_TTL_MS = ETSY_LISTING_MAX_AGE_MS;
  */
 export const EDGE_CACHE_TTL_MS = 2 * HOUR_MS;
 
+/**
+ * How long the shared D1 cache keeps listing data (with its shop). Clients measure
+ * freshness from the original fetch, so this leaves them at least 3 of Etsy's 6 hours.
+ */
+export const D1_CACHE_TTL_MS = 3 * HOUR_MS;
+
 /** How long the Worker remembers that Etsy said a listing doesn't exist. */
 export const MISSING_LISTING_CACHE_TTL_MS = 1 * HOUR_MS;
 
