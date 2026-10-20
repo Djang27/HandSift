@@ -8,8 +8,9 @@ import {
   type ListingCache,
 } from "./cache";
 
-// Cloudflare Cache API implementation. Per data center, and only functional on custom
-// domains (a no-op on *.workers.dev), which is why Phase 10 adds a global D1 layer.
+// Cloudflare Cache API implementation. Per data center, not global, and Cloudflare only
+// documents it for custom domains (though staging on *.workers.dev showed hits). D1 is the
+// global layer behind it.
 
 const KEY_PREFIX = "https://cache.handsift.internal/v1/listing/";
 
