@@ -200,7 +200,6 @@ apps/
           disclosurePatterns.ts  # phrase + negation patterns
           designedBy.ts
           shopHeuristics.ts
-          shopHeuristics.ts
           imageClassifier.ts     # stretch
         scoring/
           scorer.ts              # Scorer type
@@ -221,6 +220,7 @@ apps/
         health.ts
       etsy/
         etsyClient.ts            # only file that talks to Etsy
+        coalesce.ts              # concurrent lookups for the same ID share one Etsy call
       cache/
         cache.ts                 # cache interface
         edgeCache.ts             # Cache API impl
@@ -486,30 +486,25 @@ Each is its own `SignalModule` file.
 - Tune weights/thresholds in `config.ts` for precision. Document in `docs/scoring.md`.
 
 ### Phase 10: Shared cache with D1
-- **Manual step for me:** create `handsift-staging` and `handsift-prod` D1 databases with `wrangler d1 create`, add bindings per environment in `wrangler.toml`.
-- First migration:
+- Done: `handsift-staging` and `handsift-prod` D1 databases created (Oct 19, 2026) and bound as `DB` per environment in `wrangler.toml`.
+- Decided: **one table**. Shops always arrive with their listing, so each row stores the listing with its shop (or a "missing" marker); no join, and a listing can't be fresh while its shop is stale. First migration (`migrations/0001_create_listings_cache.sql`):
   ```sql
   CREATE TABLE listings_cache (
     listing_id TEXT PRIMARY KEY,
-    data       TEXT NOT NULL,      -- normalized fields only (not raw Etsy JSON), validated by Zod on read
+    data       TEXT NOT NULL,      -- listing + shop (normalized, not raw Etsy JSON), Zod-validated on read
     fetched_at INTEGER NOT NULL,
     expires_at INTEGER NOT NULL
   );
-  CREATE TABLE shops_cache (
-    shop_id    TEXT PRIMARY KEY,
-    data       TEXT NOT NULL,
-    fetched_at INTEGER NOT NULL,
-    expires_at INTEGER NOT NULL
-  );
-  CREATE INDEX idx_listings_expires ON listings_cache(expires_at);
-  CREATE INDEX idx_shops_expires ON shops_cache(expires_at);
+  CREATE INDEX idx_listings_cache_expires ON listings_cache (expires_at);
   ```
+- D1 entries live `D1_CACHE_TTL_MS` (3 h), leaving clients at least 3 of Etsy's 6 hours; "missing" markers 1 h.
+- The Cloudflare API token used by CI needs **D1 Edit** (the "Edit Cloudflare Workers" template doesn't include it).
 - `d1Cache.ts` implements the cache interface: bound parameters only (never string-built SQL), batched reads (`WHERE listing_id IN (...)`) and batched upserts (`db.batch`).
 - `layeredCache.ts`: Cache API -> D1 -> Etsy, writing back to both on a miss. Handlers do not change.
 - Cron Trigger (hourly) runs `cleanup.ts` to delete expired rows.
-- Request coalescing: concurrent lookups for the same uncached ID share one Etsy call.
+- Request coalescing: concurrent lookups for the same uncached ID share one Etsy call (per Worker instance; a global version would need the Durable Object in the Scaling plan).
 - Handle Etsy 429s per the Scaling plan.
-- Tests use the Workers Vitest pool with a local D1 binding and migrations applied.
+- Tests use the Workers Vitest pool with a local D1 binding and migrations applied (`test/applyMigrations.ts`).
 - Migrations are forward-only and committed to the repo; CI applies them before deploys.
 - **Done when:** a second "user" (fresh browser profile) gets results with zero Etsy calls, and expired rows are cleaned up.
 
