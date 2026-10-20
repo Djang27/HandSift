@@ -25,6 +25,17 @@ name = "RATE_LIMITER"
 namespace_id = "1001"
 simple = { limit = 30, period = 60 }
 
+# Shared listing cache (Phase 10). Local `wrangler dev` uses a local SQLite copy.
+[[d1_databases]]
+binding = "DB"
+database_name = "handsift-staging"
+database_id = "4bc22f08-6f69-4367-9ea5-6308a5c22f94"
+migrations_dir = "migrations"
+
+# Hourly cleanup of expired cache rows.
+[triggers]
+crons = ["0 * * * *"]
+
 [env.staging]
 name = "handsift-api-staging"
 workers_dev = true
@@ -43,6 +54,15 @@ ALLOWED_EXTENSION_IDS = ""
 name = "RATE_LIMITER"
 namespace_id = "1002"
 simple = { limit = 30, period = 60 }
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "handsift-staging"
+database_id = "4bc22f08-6f69-4367-9ea5-6308a5c22f94"
+migrations_dir = "migrations"
+
+[env.staging.triggers]
+crons = ["0 * * * *"]
 
 [env.production]
 name = "handsift-api"
@@ -63,3 +83,12 @@ ALLOWED_EXTENSION_IDS = ""
 name = "RATE_LIMITER"
 namespace_id = "1003"
 simple = { limit = 30, period = 60 }
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "handsift-prod"
+database_id = "6e882d76-c402-4e40-b2ce-0f38567ac3f3"
+migrations_dir = "migrations"
+
+[env.production.triggers]
+crons = ["0 * * * *"]
