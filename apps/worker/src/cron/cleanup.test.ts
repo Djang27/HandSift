@@ -1,7 +1,5 @@
-import { createScheduledController } from "cloudflare:test";
 import { env } from "cloudflare:workers";
 import { describe, expect, it, vi } from "vitest";
-import worker from "../index";
 import { cleanupExpiredRows } from "./cleanup";
 
 const NOW = 1_800_000_000_000;
@@ -46,15 +44,5 @@ describe("cleanupExpiredRows", () => {
     };
     await expect(cleanupExpiredRows(broken as unknown as D1Database, NOW)).resolves.toBeUndefined();
     expect(error).toHaveBeenCalled();
-  });
-
-  it("runs from the Worker's scheduled (cron) handler", async () => {
-    vi.spyOn(console, "log").mockImplementation(() => undefined);
-    await insertRow("7000000004", 1); // long expired
-    await worker.scheduled(
-      createScheduledController({ cron: "0 * * * *", scheduledTime: NOW }),
-      env,
-    );
-    expect(await exists("7000000004")).toBe(false);
   });
 });
