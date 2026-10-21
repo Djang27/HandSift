@@ -46,7 +46,7 @@ Etsy is the first **site adapter**. The architecture must make adding Pinterest 
 | UI (popup + badges) | React (via `@wxt-dev/module-react`), badges rendered inside Shadow DOM |
 | Page observation | MutationObserver + `visibilitychange` (whole page per batch; see Scaling plan) |
 | Data source | Etsy Open API v3 (public listing + shop endpoints, `x-api-key` auth) |
-| API proxy + shared cache | Cloudflare Workers (Wrangler), Cache API in front of D1 (Phase 10) |
+| API proxy + shared cache | Cloudflare Workers (Wrangler) + D1 shared cache (Phase 10). Per-listing Cache API layer dropped Oct 2026 (free-plan subrequest limit; see Scaling plan) |
 | Shared database | Cloudflare D1 (SQLite), raw SQL with bound parameters, migrations via `wrangler d1 migrations` |
 | Request batching/throttling | p-limit in the extension, Etsy's batch listings endpoint (100 IDs per call) |
 | Scripts | TypeScript run with jiti (`scripts/`) |
@@ -153,7 +153,7 @@ Cloudflare Worker
   - holds Etsy API key as a secret
   - GET /v1/listings?ids=...  -> batched Etsy lookup; each listing comes with its shop
   - GET /health               -> unversioned liveness check (smoke tests)
-  - cache layer: Cache API -> D1 (Phase 10) -> Etsy
+  - cache layer: D1 (Phase 10) -> Etsy
   - per-IP rate limiting (primary abuse defense), input validation,
     origin check (filters casual misuse only, NOT a security boundary)
   - structured JSON logs (Workers Logs)
@@ -213,6 +213,7 @@ apps/
   worker/
     src/
       index.ts                   # entry, wiring only
+      wiring.ts                  # builds per-request deps from bindings (subrequest budget test)
       router.ts
       responses.ts               # typed error responses
       handlers/
@@ -223,9 +224,8 @@ apps/
         coalesce.ts              # concurrent lookups for the same ID share one Etsy call
       cache/
         cache.ts                 # cache interface
-        edgeCache.ts             # Cache API impl
         d1Cache.ts               # D1 impl (Phase 10)
-        layeredCache.ts          # edge -> D1 -> miss
+        layeredCache.ts          # layers in order (D1 today; room for a faster layer later)
       middleware/
         rateLimit.ts
         validate.ts
@@ -306,8 +306,8 @@ The Worker itself scales automatically; the real bottleneck is **Etsy's API quot
 
 1. **Client cache (Dexie):** a user doesn't re-fetch a listing checked within the last **6 hours** (Etsy's freshness limit for listing content; see Etsy API Terms compliance).
 2. **Batching:** one Worker request per page of listings (up to 100), not per listing or per visible row. Etsy charges per call, not per listing, so requesting the whole page at once costs 1 call instead of ~15-20 (found in Phase 4 testing). Hidden tabs request nothing until shown.
-3. **Worker edge cache (Cache API):** repeated lookups served without hitting Etsy. Per Cloudflare data center, not global. Cloudflare only documents it as working on custom domains, but on staging (`*.workers.dev`) we observed edge hits on Oct 19, 2026. Don't rely on it either way: D1 (Phase 10) is the global layer. A custom domain for production is still worth considering.
-4. **Shared global cache (Phase 10, D1):** once one user checks a listing or shop, every user gets it free. Lookup order is Cache API (fastest, per data center) -> D1 (global) -> Etsy. D1 stores **only the normalized fields the signals need (not raw Etsy JSON, not verdicts)**, so tuning scoring never requires refetching, Etsy's minimum-data rule is respected, and no user data is ever stored. Entries expire within Etsy's freshness limits (6 h listings, 24 h shops).
+3. **Worker edge cache (Cache API): dropped Oct 20, 2026; kept in mind for later.** Cloudflare's free plan allows **50 subrequests per request**, and Cache API *and* D1 calls count. The edge cache needed one Cache API call per listing, so a 52-listing request used up the budget and the Etsy call was refused (found by `pnpm eval`; the local test simulator doesn't enforce the limit). Lookups now go D1 -> Etsy (~4 subrequests for 100 listings), guarded by a budget test in `apps/worker/src/wiring.test.ts`. **Bring it back** (code in git history at `48b743f`, `apps/worker/src/cache/edgeCache.ts`) only if: we move to Workers Paid (10,000 subrequests, 1,000 Cache API calls per request), or we cache **one entry per whole page** (1 read + 1 write). Add it as a layer in front of D1 in `wiring.ts`; handlers don't change. Note: on staging (`*.workers.dev`) the Cache API did serve hits, though Cloudflare only documents it for custom domains.
+4. **Shared global cache (Phase 10, D1):** once one user checks a listing or shop, every user gets it free. Lookup order is D1 (global) -> Etsy. Free plan: 5M D1 rows read/day, roughly 50,000 full-page lookups. D1 stores **only the normalized fields the signals need (not raw Etsy JSON, not verdicts)**, so tuning scoring never requires refetching, Etsy's minimum-data rule is respected, and no user data is ever stored. Entries expire within Etsy's freshness limits (6 h listings, 24 h shops).
 5. **Graceful degradation:** if Etsy returns 429 or errors, the Worker still returns what it has cached and lists the other IDs as `unavailable`; the extension shows nothing new for those (cached verdicts still display) and backs off. Never a wrong badge.
 6. **Global Etsy budget (later):** per-IP limits don't stop abuse spread across many IPs. Before launch, stop calling Etsy once `x-remaining-today` drops below a reserve (cache-only mode).
 7. **When to add a queue (not needed yet):** lookups are interactive, so overload is handled by shedding load (cached results + `unavailable`, client backs off), not queuing. The extension's batching (Phase 4) and request coalescing (Phase 10) cover current scale. Add more only when Worker logs show the need:
@@ -336,7 +336,7 @@ The Worker itself scales automatically; the real bottleneck is **Etsy's API quot
 
 ### Observability
 - Enable Workers Logs (`[observability] enabled = true` in `wrangler.toml`).
-- `log.ts` emits **structured JSON** (one object per event): route, status, latency, cache layer hit (edge / D1 / miss), Etsy calls made, Etsy 429s, our own rate-limit rejections, extension version, errors.
+- `log.ts` emits **structured JSON** (one object per event): route, status, latency, cache layer hit (D1 / miss), Etsy calls made, Etsy 429s, our own rate-limit rejections, extension version, errors.
 - **Never log raw IPs, full URLs with user data, or the API key.** Rate limiting may use the IP; logs must not store it. This keeps the privacy policy honest.
 
 ---
@@ -500,7 +500,7 @@ Each is its own `SignalModule` file.
 - D1 entries live `D1_CACHE_TTL_MS` (3 h), leaving clients at least 3 of Etsy's 6 hours; "missing" markers 1 h.
 - The Cloudflare API token used by CI needs **D1 Edit** (the "Edit Cloudflare Workers" template doesn't include it).
 - `d1Cache.ts` implements the cache interface: bound parameters only (never string-built SQL), batched reads (`WHERE listing_id IN (...)`) and batched upserts (`db.batch`).
-- `layeredCache.ts`: Cache API -> D1 -> Etsy, writing back to both on a miss. Handlers do not change.
+- `layeredCache.ts`: layers in order, D1 today (the per-listing Cache API layer was dropped; see Scaling plan item 3). Handlers do not change.
 - Cron Trigger (hourly) runs `cleanup.ts` to delete expired rows.
 - Request coalescing: concurrent lookups for the same uncached ID share one Etsy call (per Worker instance; a global version would need the Durable Object in the Scaling plan).
 - Handle Etsy 429s per the Scaling plan.

@@ -18,7 +18,7 @@ export function cacheEntryFetchedAt(entry: CacheEntry): number {
   return entry.kind === "listing" ? entry.result.fetchedAt : entry.fetchedAt;
 }
 
-/** A cache layer. Edge cache now; D1 and a layered edge -> D1 cache in Phase 10. */
+/** A cache layer (D1 today; layered so faster layers can be added in front later). */
 export interface ListingCache {
   /** Returns fresh entries only; misses are simply absent from the map. */
   get(ids: readonly string[]): Promise<Map<string, CacheEntry>>;
