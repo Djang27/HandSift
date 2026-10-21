@@ -19,12 +19,6 @@ export const ETSY_LISTING_MAX_AGE_MS = 6 * HOUR_MS;
 export const VERDICT_TTL_MS = ETSY_LISTING_MAX_AGE_MS;
 
 /**
- * How long the Worker's edge cache keeps listing data. Kept well under the 6-hour limit so
- * clients still get most of the freshness budget.
- */
-export const EDGE_CACHE_TTL_MS = 2 * HOUR_MS;
-
-/**
  * How long the shared D1 cache keeps listing data (with its shop). Clients measure
  * freshness from the original fetch, so this leaves them at least 3 of Etsy's 6 hours.
  */
