@@ -484,6 +484,7 @@ Each is its own `SignalModule` file.
 
 ### Phase 9: Tuning
 - Tune weights/thresholds in `config.ts` for precision. Document in `docs/scoring.md`.
+- Done (Oct 21, 2026) with 107 labels: **no number changed.** Conservative/Balanced already have 100% precision; the Aggressive gains on offer depended on young shops, and the labels contain no young honest shops to test against. `docs/scoring.md` records the results, the label biases, the rules for future changes, and the labels that would unlock them. `pnpm eval --details` prints per-listing features for future tuning.
 
 ### Phase 10: Shared cache with D1
 - Done: `handsift-staging` and `handsift-prod` D1 databases created (Oct 19, 2026) and bound as `DB` per environment in `wrangler.toml`.

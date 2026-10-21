@@ -7,6 +7,7 @@
 ```sh
 pnpm eval                              # through the staging Worker
 pnpm eval --worker http://localhost:8787   # through a local `wrangler dev`
+pnpm eval --details                    # plus a per-listing feature table (for tuning)
 ```
 
 It reads `data/labels.csv`, fetches those listings through the Worker (about one Etsy call
