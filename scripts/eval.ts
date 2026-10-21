@@ -5,11 +5,13 @@
 //
 //   pnpm eval                  # uses the staging Worker (apps/extension/.env.staging)
 //   pnpm eval --worker <url>   # any Worker, e.g. http://localhost:8787
+//   pnpm eval --details        # also print every listing's features (for tuning)
 
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { LIKELY_AI_THRESHOLDS, type Sensitivity } from "@handsift/shared";
 import { createWorkerSource } from "../apps/extension/src/adapters/source/workerSource";
+import { listingFeatures, type ListingFeatures } from "../apps/extension/src/core/eval/features";
 import { parseLabels, type LabelRow } from "../apps/extension/src/core/eval/labels";
 import {
   confusion,
@@ -72,6 +74,50 @@ function printTable(items: LabeledVerdict[], rules: { name: string; rule: FlagRu
   for (const row of rows) console.log(format(row));
 }
 
+type Item = LabeledVerdict & { id: string; features: ListingFeatures };
+
+/** One row per listing, grouped by label and whether the seller disclosed AI, highest score first. */
+function printDetails(items: Item[]): void {
+  const group = (i: Item) =>
+    i.label === "human" ? "human" : i.features.disclosed ? "ai-disclosed" : "ai-undisclosed";
+  const num = (n: number | null, digits = 0) => (n === null ? "-" : n.toFixed(digits));
+  const header = [
+    "group",
+    "id",
+    "score",
+    "clues",
+    "shopDays",
+    "listings",
+    "digital",
+    "sales/lst",
+    "whoMade",
+    "partner",
+    "type",
+  ];
+  const rows = [...items]
+    .sort((a, b) => group(a).localeCompare(group(b)) || b.verdict.score - a.verdict.score)
+    .map((i) => {
+      const f = i.features;
+      return [
+        group(i),
+        i.id,
+        f.score.toFixed(2),
+        f.clues.join("+") || "-",
+        num(f.shopAgeDays),
+        num(f.activeListings),
+        f.digitalShare === null ? "-" : `${(f.digitalShare * 100).toFixed(0)}%`,
+        num(f.salesPerListing, 2),
+        f.whoMade ?? "-",
+        f.productionPartner ? "yes" : "",
+        f.listingType,
+      ];
+    });
+  const widths = header.map((h, c) => Math.max(h.length, ...rows.map((r) => (r[c] ?? "").length)));
+  console.log("\nPer-listing details:");
+  for (const row of [header, ...rows])
+    console.log(row.map((c, k) => c.padEnd(widths[k] ?? 0)).join("  "));
+}
+
 async function main(): Promise<void> {
   const labels = await readLabels();
   const baseUrl = await workerUrl();
@@ -86,19 +132,22 @@ async function main(): Promise<void> {
 
   const source = createWorkerSource({ baseUrl, version: "eval" });
   const lookup = await source.getListings(labels.map((l) => l.id));
-  const items: (LabeledVerdict & { id: string })[] = lookup.results.flatMap(
-    ({ listing, shop, fetchedAt }) => {
-      const row = byId.get(listing.listingId);
-      if (!row) return [];
-      const input = shop ? { listing, shop, fetchedAt } : { listing, fetchedAt };
-      const verdict = score({
-        listing,
-        signals: SIGNALS.map((s) => s.evaluate(input)),
-        checkedAt: fetchedAt,
-      });
-      return [{ id: row.id, label: row.label, verdict }];
-    },
-  );
+  const items: Item[] = lookup.results.flatMap((result) => {
+    const { listing, shop, fetchedAt } = result;
+    const row = byId.get(listing.listingId);
+    if (!row) return [];
+    const input = shop ? { listing, shop, fetchedAt } : { listing, fetchedAt };
+    const signals = SIGNALS.map((s) => s.evaluate(input));
+    const verdict = score({ listing, signals, checkedAt: fetchedAt });
+    return [
+      {
+        id: row.id,
+        label: row.label,
+        verdict,
+        features: listingFeatures(result, signals, verdict),
+      },
+    ];
+  });
   console.log(
     `Evaluated: ${String(items.length)}` +
       (lookup.missing.length > 0
@@ -141,6 +190,8 @@ async function main(): Promise<void> {
       );
     }
   }
+
+  if (process.argv.includes("--details")) printDetails(items);
 }
 
 main().catch((error: unknown) => {
