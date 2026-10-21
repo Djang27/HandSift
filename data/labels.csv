@@ -25,3 +25,29 @@ listing_id,label,source_of_label
 515748713,human,research review 2026-10-11: title says Hand Drawn Illustrations travel clipart, description says No AI is used in any part of my process, anti-AI statement
 4341870048,human,research review 2026-10-11: Shadow of the Colossus Hand Drawn Map, description says completely hand drawn, no AI was used, anti-AI statement
 1668533150,human,research review 2026-10-11: custom hand drawn anime couple portrait commission, description says entirely drawn by myself, non-AI digital art
+4297863211,ai,web research 2026-10-20: coloring book; description says made with MidJourney as a starting point (title has no AI mention)
+1637062592,ai,web research 2026-10-20: watercolor clipart bundle; description says created with the help of AI (title has no AI mention)
+4352562266,ai,web research 2026-10-20: wedding clipart bundle; "AI Generated Art" only in the description tag list
+4295040826,ai,web research 2026-10-20: crochet pattern; description opens with "image AI generated" (title has no AI mention)
+4440766969,ai,web research 2026-10-20: crochet pattern; description says some photos may be AI generated (hedged disclosure)
+4505477401,ai,web research 2026-10-20: coloring book; description discloses MidJourney
+1669583190,ai,web research 2026-10-20: grayscale coloring book; AI-generated in title
+1299721998,ai,web research 2026-10-20: custom AI art service; AI generated and Stable Diffusion in title
+1872208013,ai,web research 2026-10-20: 350K AI stock image library; AI in title and materials
+1200655238,human,web research 2026-10-20: hand-thrown red clay stoneware mug; tiny shop; Made by
+4381503900,human,web research 2026-10-20: hand-thrown speckled green stoneware mug; small studio
+1510223855,human,web research 2026-10-20: hand-thrown ceramic travel mug with lid; large established pottery shop
+1814701791,human,web research 2026-10-20: handmade stoneware mug with blue drip glaze; established pottery shop
+4296141840,human,web research 2026-10-20: speckled stoneware mug with painted stripe; established pottery shop
+563376337,human,web research 2026-10-20: minimalist handmade pottery mug; established pottery shop
+1702915637,human,web research 2026-10-20: handmade pottery mug with carved sun design
+4396369539,human,web research 2026-10-20: custom raku-fired ceramic mug; small shop
+1226976824,human,web research 2026-10-20: leather wallet; description says hand cut and saddle stitched by hand, no sewing machine
+1102679424,human,web research 2026-10-20: vegetable-tanned leather wallet; hand stitched with waxed thread, tools named
+1890824073,human,web research 2026-10-20: full-grain leather slip wallet; hand-stitched; small maker
+677424431,human,web research 2026-10-20: handmade stoneware mug from a pottery studio; Etsy lists someone_else + production partner (tricky: Designed by-style data on a handmade item)
+1332680303,human,web research 2026-10-20: printable of a 19th-century oil painting (public domain); big vintage printable shop (tricky: all-digital catalog)
+915005111,human,web research 2026-10-20: printable of a late-1800s mountain landscape painting (public domain); vintage art shop (tricky)
+1095129253,human,web research 2026-10-20: signed fine-art photography print on Hahnemühle paper (tricky: photography)
+4598232342,human,web research 2026-10-20: coloring book with "No AI" in the title (tricky: anti-AI statement in an AI-heavy category)
+4387690266,human,web research 2026-10-20: oil character portrait commissions "without digital or AI" (tricky: anti-AI statement)
