@@ -395,18 +395,21 @@ From Etsy's API Terms of Use (last updated Aug 18, 2026). Record details and any
 - Applies pending D1 migrations to the staging database (`wrangler d1 migrations apply --remote --env staging`), then deploys the Worker to `staging` with `cloudflare/wrangler-action`, then smoke tests `/health`.
 
 ### `release.yml` (push of a `v*` tag)
-- Job 1: full CI.
-- Job 2: apply D1 migrations to production, deploy Worker to `production`, smoke test `/health`. Uses a GitHub Environment named `production` (optionally with required manual approval).
-- Job 3 (depends on job 2): build extension with production Worker URL, verify manifest version matches the tag, create a GitHub Release with the zip, submit to Chrome Web Store with `wxt submit`.
+- Job 1: full CI (`ci.yml` called as a reusable workflow, including e2e).
+- Job 2: refuse tags not on `main` or not matching `apps/extension/package.json` (before anything deploys), apply D1 migrations to production, deploy Worker to `production`, smoke test `/health`. Uses a GitHub Environment named `production` (optionally with required manual approval).
+- Job 3 (depends on job 2): build extension with the production Worker URL (repository variable `PRODUCTION_WORKER_URL`), verify the built manifest version matches the tag, create a GitHub Release with the zip, submit to Chrome Web Store with `wxt submit` (Chrome Web Store API v2, service-account auth). Submission is skipped, with a notice, until `CHROME_EXTENSION_ID` is set.
 - Chrome Web Store review is manual on Google's side, so a tag means "submitted", not "live".
 
 ### Release flow
 1. Bump version in `apps/extension/package.json` in a PR, merge after CI passes.
-2. Tag `main` with `vX.Y.Z`, push the tag.
+2. Tag `main` with `vX.Y.Z`, push the tag (`git tag v0.1.0 origin/main && git push origin v0.1.0`).
+
+First release only: the store has no listing yet, so upload the zip from the GitHub Release by hand in the Chrome Web Store dashboard. That assigns the permanent extension ID. Then set the `CHROME_*` secrets below, and set `ALLOWED_EXTENSION_IDS` in `wrangler.toml` (production) to that ID.
 
 ### GitHub secrets
 - `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`
-- `CHROME_EXTENSION_ID`, `CHROME_CLIENT_ID`, `CHROME_CLIENT_SECRET`, `CHROME_REFRESH_TOKEN` (Phase 12)
+- `CHROME_EXTENSION_ID`, `CHROME_PUBLISHER_ID`, `CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL`, `CHROME_SERVICE_ACCOUNT_PRIVATE_KEY` (Chrome Web Store API v2; the older client ID / refresh token flow is deprecated)
+- Repository variables (not secret): `STAGING_WORKER_URL`, `PRODUCTION_WORKER_URL`
 
 ---
 
@@ -545,6 +548,7 @@ Each is its own `SignalModule` file.
 - Display Etsy's required notice prominently in the popup and store listing: "The term 'Etsy' is a trademark of Etsy, Inc. This Application uses Etsy's API, but is not endorsed or certified by Etsy." Follow Etsy's Trademark Policy for any use of the name; never use Etsy's logo or brand styling.
 - **Manual step for me:** Chrome Web Store developer account, first manual upload for the extension ID, CWS API credentials into GitHub secrets.
 - `release.yml`, tested with a `v0.1.0` tag.
+  - Written (Oct 22, 2026); extension version bumped to 0.1.0. Not yet run: the first `v0.1.0` tag is its test.
 - Store listing: privacy policy (only listing IDs sent to our Worker, forwarded to Etsy; IP addresses used transiently for rate limiting and never logged or stored), permission justifications, screenshots, README with honest accuracy notes.
 - **Done when:** a tag deploys production Worker, creates a GitHub Release, submits the extension.
 
