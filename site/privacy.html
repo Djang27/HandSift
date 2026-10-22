@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HandSift privacy policy</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="legal">
+      <nav aria-label="Site">
+        <a href="./">HandSift</a>
+        <a href="privacy.html" aria-current="page">Privacy</a>
+        <a href="terms.html">Terms</a>
+      </nav>
+
+      <h1>Privacy policy</h1>
+      <p><em>Last updated: October 21, 2026</em></p>
+      <p>
+        HandSift is a browser extension that labels AI-generated listings on Etsy. This policy
+        explains exactly what data it uses. In short: HandSift sends the ID numbers of the Etsy
+        listings on the page you're viewing to the HandSift server, which looks them up through
+        Etsy's official API. It collects nothing about you.
+      </p>
+
+      <h2>What stays on your device</h2>
+      <ul>
+        <li>
+          <strong>Results for listings you've viewed</strong> (whether each listing was flagged, and
+          why), kept in your browser for up to 6 hours so pages you revisit load faster. They're
+          deleted automatically after that, or immediately with "Clear cache" in the HandSift popup.
+        </li>
+        <li>
+          <strong>Your settings</strong> (on/off, label/blur/hide, sensitivity) and whether you've
+          accepted these terms, stored with Chrome's extension storage. If you use Chrome sync,
+          Google syncs these settings across your browsers.
+        </li>
+      </ul>
+
+      <h2>What is sent, and where</h2>
+      <p>When you view an Etsy search or shop page, HandSift sends the HandSift server:</p>
+      <ul>
+        <li>
+          the <strong>ID numbers of the listings on that page</strong> (for example 1234567890), and
+        </li>
+        <li>the <strong>HandSift version</strong> you're running.</li>
+      </ul>
+      <p>
+        It never sends your name, your Etsy account, cookies, search terms, the page's contents, or
+        anything about other websites. Nothing is sent while HandSift is turned off, while the Etsy
+        tab is in the background, or before you accept these terms.
+      </p>
+      <p>
+        The HandSift server runs on Cloudflare Workers. It looks up those listings through Etsy's
+        official API and returns public listing and shop information (for example a listing's title,
+        description, tags, materials, how it's made, and a shop's age and number of listings and
+        sales).
+      </p>
+
+      <h2>What the server keeps</h2>
+      <ul>
+        <li>
+          <strong>Public listing and shop information</strong> from Etsy, cached for up to 3 hours
+          so other people viewing the same listings don't trigger extra Etsy requests. It describes
+          listings, not you, and isn't linked to whoever requested it.
+        </li>
+        <li>
+          <strong
+            >Your IP address is used only to limit how often one connection can make
+            requests</strong
+          >
+          (to prevent abuse). Cloudflare's rate limiter uses it briefly; HandSift never logs or
+          stores it.
+        </li>
+        <li>
+          <strong>Basic operational logs</strong>: counts such as how many listings were requested,
+          how many came from the cache, and which HandSift version made the request. They contain no
+          IP addresses and no listing IDs.
+        </li>
+      </ul>
+      <p>
+        Like any website, Cloudflare (which hosts the server) and GitHub (which hosts this page)
+        process standard connection data to deliver their services, under their own privacy
+        policies.
+      </p>
+
+      <h2>What HandSift never does</h2>
+      <ul>
+        <li>No accounts, sign-ins, or personal profiles.</li>
+        <li>No advertising, analytics, or tracking, and no selling or sharing of data.</li>
+        <li>No collection of personal information about Etsy buyers or sellers.</li>
+      </ul>
+      <p>
+        The use of information received through HandSift adheres to the Chrome Web Store User Data
+        Policy, including the Limited Use requirements.
+      </p>
+
+      <h2>Permissions</h2>
+      <ul>
+        <li>
+          <strong>Etsy pages</strong>: to read listing ID numbers and show labels on the listings.
+        </li>
+        <li><strong>The HandSift server</strong>: to look those listings up.</li>
+        <li><strong>Storage</strong>: to keep your settings and recent results on your device.</li>
+      </ul>
+
+      <h2>Your choices</h2>
+      <p>
+        Turn HandSift off in its popup at any time, clear its cache from the popup, or uninstall it,
+        which deletes everything it stored on your device.
+      </p>
+
+      <h2>Children</h2>
+      <p>
+        HandSift is not directed at children under 13 and collects no personal information from
+        anyone.
+      </p>
+
+      <h2>Changes</h2>
+      <p>
+        If this policy changes, the date above changes too. If a change affects what data is sent,
+        HandSift will ask you to review and accept the updated terms before it continues.
+      </p>
+
+      <h2>Contact</h2>
+      <!-- PLACEHOLDER: replace with HandSift's support address. -->
+      <p>Questions: <a href="mailto:support@handsift.invalid">support@handsift.invalid</a></p>
+
+      <footer>
+        <p>
+          The term 'Etsy' is a trademark of Etsy, Inc. This Application uses Etsy's API, but is not
+          endorsed or certified by Etsy.
+        </p>
+      </footer>
+    </main>
+  </body>
+</html>
