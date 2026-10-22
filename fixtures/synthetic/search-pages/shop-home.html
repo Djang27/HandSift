@@ -1,0 +1,37 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Synthetic shop home page</title>
+  </head>
+  <body>
+    <!--
+      Mirrors the structure of an Etsy shop home page (Oct 2026). Made-up content. Unlike search
+      results, shop cards are not inside <li> elements: each card is itself a grid item, a
+      direct child of the grid. A "featured" row repeats some listings from the main grid.
+    -->
+    <div class="featured-listings">
+      <div class="wt-grid collage-shop-cards-no-content">
+        <div class="v2-listing-card wt-grid__item-xs-6" data-listing-id="1000000002" data-page-type="shop_collage_cards_experiment" data-listing-card-v2>
+          <img src="featured.jpg" alt="" />
+          <a data-listing-link data-listing-id="1000000002" href="/listing/1000000002/example">Featured</a>
+        </div>
+      </div>
+    </div>
+    <div data-listings-container>
+      <div class="responsive-listing-grid wt-grid">
+        <div class="v2-listing-card wt-grid__item-xs-6" data-listing-id="1000000002" data-page-type="shop" data-listing-card-v2>
+          <img src="one.jpg" alt="" />
+          <a data-listing-link data-listing-id="1000000002" href="/listing/1000000002/example">One</a>
+        </div>
+        <div class="v2-listing-card wt-grid__item-xs-6" data-listing-id="1000000003" data-page-type="shop" data-listing-card-v2>
+          <img src="two.jpg" alt="" />
+          <a data-listing-link data-listing-id="1000000003" href="/listing/1000000003/example">Two</a>
+        </div>
+        <div class="v2-listing-card wt-grid__item-xs-6" data-listing-id="1000000005" data-page-type="shop" data-listing-card-v2>
+          <img src="three.jpg" alt="" />
+          <a data-listing-link data-listing-id="1000000005" href="/listing/1000000005/example">Three</a>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
