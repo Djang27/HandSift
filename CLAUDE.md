@@ -222,6 +222,7 @@ apps/
       etsy/
         etsyClient.ts            # only file that talks to Etsy
         coalesce.ts              # concurrent lookups for the same ID share one Etsy call
+        budgetGuard.ts           # cache-only mode when Etsy's daily quota runs low
       cache/
         cache.ts                 # cache interface
         d1Cache.ts               # D1 impl (Phase 10)
@@ -309,7 +310,7 @@ The Worker itself scales automatically; the real bottleneck is **Etsy's API quot
 3. **Worker edge cache (Cache API): dropped Oct 20, 2026; kept in mind for later.** Cloudflare's free plan allows **50 subrequests per request**, and Cache API *and* D1 calls count. The edge cache needed one Cache API call per listing, so a 52-listing request used up the budget and the Etsy call was refused (found by `pnpm eval`; the local test simulator doesn't enforce the limit). Lookups now go D1 -> Etsy (~4 subrequests for 100 listings), guarded by a budget test in `apps/worker/src/wiring.test.ts`. **Bring it back** (code in git history at `48b743f`, `apps/worker/src/cache/edgeCache.ts`) only if: we move to Workers Paid (10,000 subrequests, 1,000 Cache API calls per request), or we cache **one entry per whole page** (1 read + 1 write). Add it as a layer in front of D1 in `wiring.ts`; handlers don't change. Note: on staging (`*.workers.dev`) the Cache API did serve hits, though Cloudflare only documents it for custom domains.
 4. **Shared global cache (Phase 10, D1):** once one user checks a listing or shop, every user gets it free. Lookup order is D1 (global) -> Etsy. Free plan: 5M D1 rows read/day, roughly 50,000 full-page lookups. D1 stores **only the normalized fields the signals need (not raw Etsy JSON, not verdicts)**, so tuning scoring never requires refetching, Etsy's minimum-data rule is respected, and no user data is ever stored. Entries expire within Etsy's freshness limits (6 h listings, 24 h shops).
 5. **Graceful degradation:** if Etsy returns 429 or errors, the Worker still returns what it has cached and lists the other IDs as `unavailable`; the extension shows nothing new for those (cached verdicts still display) and backs off. Never a wrong badge.
-6. **Global Etsy budget (later):** per-IP limits don't stop abuse spread across many IPs. Before launch, stop calling Etsy once `x-remaining-today` drops below a reserve (cache-only mode).
+6. **Global Etsy budget guard (done, Phase 12):** per-IP limits don't stop abuse spread across many IPs, so once `x-remaining-today` drops below `ETSY_DAILY_RESERVE` (500), or Etsy answers 429, the Worker goes cache-only and re-probes every 15 minutes (`apps/worker/src/etsy/budgetGuard.ts`). State is per Worker instance.
 7. **When to add a queue (not needed yet):** lookups are interactive, so overload is handled by shedding load (cached results + `unavailable`, client backs off), not queuing. The extension's batching (Phase 4) and request coalescing (Phase 10) cover current scale. Add more only when Worker logs show the need:
    - frequent `etsy_rate_limited` outcomes: a **Durable Object** as a global pacer keeping all Etsy calls under 5/s (today each Worker instance acts alone);
    - daily quota running low: the same Durable Object **merging IDs from many users' requests into one 100-ID Etsy call**;
@@ -510,10 +511,18 @@ Each is its own `SignalModule` file.
 - **Done when:** a second "user" (fresh browser profile) gets results with zero Etsy calls, and expired rows are cleaned up.
 
 ### Phase 11 (stretch): Image classifier
+- **Deferred until after launch** (decided Oct 21, 2026). Plan when picked up: first an offline experiment running 2–3 openly licensed AI-image detectors on the labeled listings' photos; build it into the extension only if one separates undisclosed AI from human listings without false flags.
 - `imageClassifier` SignalModule; model runs in offscreen document behind an adapter.
 - Only in ambiguous score range, feature-flagged off. Keep only if eval improves.
 
 ### Phase 12: Hardening + ship
+- Decided (Oct 21, 2026):
+  - Privacy policy, terms, and a simple landing page on **GitHub Pages** (from this repo); a custom domain can be added later (GitHub redirects the old links).
+  - Support email: a **new dedicated Gmail** (placeholder in `config.ts` until Daniel creates it).
+  - Name in Etsy's warranty disclaimer: **HandSift**.
+  - Repo README styled like a product page (banner, install badges, website link, features + screenshots, changelog, honest accuracy, disclaimer); store badges and screenshots finished after launch.
+  - Shipped as separate PRs: budget guard, consent screen, pages + README, Playwright e2e, release workflow.
+- Still open: repo license (none / MIT / GPL-3.0).
 - Playwright e2e on a saved search page.
 - Re-read Etsy's API terms for changes; submit the final app behavior to Etsy if it changed since approval.
 - First-run screen: user terms (with Etsy's warranty disclaimer) and privacy policy, accepted by click-through. Support email in the popup and store listing.

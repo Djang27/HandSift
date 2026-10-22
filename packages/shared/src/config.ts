@@ -27,6 +27,17 @@ export const D1_CACHE_TTL_MS = 3 * HOUR_MS;
 /** How long the Worker remembers that Etsy said a listing doesn't exist. */
 export const MISSING_LISTING_CACHE_TTL_MS = 1 * HOUR_MS;
 
+// Etsy quota
+
+/**
+ * Global Etsy budget guard: when Etsy reports fewer calls left today than this (out of
+ * 5,000 shared by every user), the Worker stops calling Etsy and serves only cached data.
+ */
+export const ETSY_DAILY_RESERVE = 500;
+
+/** While the quota is low (or after an Etsy 429), let one call through this often to re-check. */
+export const ETSY_LOW_QUOTA_RECHECK_MS = 15 * 60 * SECOND_MS;
+
 /** How often the client cache deletes expired verdicts (Etsy: don't keep data longer than needed). */
 export const VERDICT_PRUNE_INTERVAL_MS = 1 * HOUR_MS;
 

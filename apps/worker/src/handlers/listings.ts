@@ -6,6 +6,7 @@ import {
   type V1ListingsResponse,
 } from "@handsift/shared";
 import type { CacheEntry, ListingCache } from "../cache/cache";
+import { EtsyBudgetError } from "../etsy/budgetGuard";
 import { EtsyRateLimitedError, type EtsyBatchResult } from "../etsy/etsyClient";
 import { logError, logEvent } from "../log";
 import { parseListingsQuery } from "../middleware/validate";
@@ -41,7 +42,12 @@ export async function handleListings(request: Request, deps: ListingsDeps): Prom
       for (const entry of fresh) entries.set(entryKey(entry), entry);
       if (fresh.length > 0) deps.waitUntil(deps.cache.put(fresh));
     } catch (error) {
-      outcome = error instanceof EtsyRateLimitedError ? "etsy_rate_limited" : "etsy_error";
+      outcome =
+        error instanceof EtsyBudgetError
+          ? "etsy_budget_reserve"
+          : error instanceof EtsyRateLimitedError
+            ? "etsy_rate_limited"
+            : "etsy_error";
       logError(outcome, error);
     }
     for (const id of toFetch) if (!entries.has(id)) unavailable.add(id);
