@@ -217,6 +217,8 @@ apps/
         pageController.ts        # applies verdicts + settings to cards (badges, blur, hide)
         contentApp.ts            # content script logic (entrypoint stays wiring only)
     e2e/                         # Playwright: fixtures, mock Worker, *.e2e.ts
+    public/icon/                 # 16/32/48/128 PNGs exported from branding/logo.svg
+    scripts/renderIcons.ts       # `pnpm --filter @handsift/extension icons`: exports the logo
   worker/
     src/
       index.ts                   # entry, wiring only
@@ -252,6 +254,8 @@ packages/
       api.ts                     # Worker request/response contracts
       config.ts                  # all tunables
       interfaces.ts              # SiteAdapter, ItemSource, SignalModule, VerdictStore
+branding/
+  logo.svg                       # logo source of truth (teal #0F766E, sparkle #FDE68A)
 fixtures/
   real/                          # gitignored: raw Etsy JSON + saved pages, local only
     listings/  shops/  search-pages/
@@ -532,6 +536,7 @@ Each is its own `SignalModule` file.
   - Repo README styled like a product page (banner, install badges, website link, features + screenshots, changelog, honest accuracy, disclaimer); store badges and screenshots finished after launch.
   - Shipped as separate PRs: budget guard, consent screen, pages + README, Playwright e2e, release workflow.
   - License: **none for now** (all rights reserved); revisit later.
+  - Logo: a crossed-out AI sparkle on HandSift teal (`branding/logo.svg`). Teal (`#0F766E`, `#2DD4BF` in dark mode) is the accent across the popup, welcome page, and site; never Etsy's orange or styling. Badge colors stay meaning-based (solid = disclosed, outlined amber = likely).
 - Playwright e2e on a saved search page.
   - Done: `apps/extension/e2e/` builds the extension against a mock Worker (`e2e/mockWorker.ts`, synthetic fixtures), loads it in Chromium, and serves the synthetic search page at an etsy.com URL. Covers consent (nothing sent before agreeing), badges, tooltips, the client cache, and hide mode.
 - Re-read Etsy's API terms for changes; submit the final app behavior to Etsy if it changed since approval.
