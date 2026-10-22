@@ -35,6 +35,9 @@ export function parseSettings(raw: unknown): Settings {
     mode: DisplayModeSchema.safeParse(stored.mode).data ?? DEFAULT_SETTINGS.mode,
     sensitivity:
       SensitivitySchema.safeParse(stored.sensitivity).data ?? DEFAULT_SETTINGS.sensitivity,
+    termsAcceptedVersion:
+      SettingsSchema.shape.termsAcceptedVersion.safeParse(stored.termsAcceptedVersion).data ??
+      DEFAULT_SETTINGS.termsAcceptedVersion,
   };
 }
 

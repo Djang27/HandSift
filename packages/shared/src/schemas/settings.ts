@@ -12,6 +12,8 @@ export const SettingsSchema = z.object({
   enabled: z.boolean(),
   mode: DisplayModeSchema,
   sensitivity: SensitivitySchema,
+  /** Version of the terms and privacy policy the user accepted; 0 = not yet. */
+  termsAcceptedVersion: z.number().int().nonnegative(),
 });
 
 export type Settings = z.infer<typeof SettingsSchema>;
