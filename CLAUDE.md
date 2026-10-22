@@ -556,7 +556,7 @@ Each is its own `SignalModule` file.
 - `release.yml`, tested with a `v0.1.0` tag.
   - Written (Oct 22, 2026); extension version bumped to 0.1.0. Not yet run: the first `v0.1.0` tag is its test.
 - Store listing: privacy policy (only listing IDs sent to our Worker, forwarded to Etsy; IP addresses used transiently for rate limiting and never logged or stored), permission justifications, screenshots, README with honest accuracy notes.
-  - Done: `store/listing.md` (paste-ready dashboard text) and `store/images/` (three 1280×800 screenshots of the real extension on a neutral demo page, never real Etsy pages or sellers' photos; 440×280 promo tile). README still to do.
+  - Done: `store/listing.md` (paste-ready dashboard text) and `store/images/` (three 1280×800 screenshots of the real extension on a neutral demo page, never real Etsy pages or sellers' photos; 440×280 promo tile). `README.md` (product page: features, screenshots, honest accuracy, how it works, development) and `CHANGELOG.md` done Oct 22, 2026; add the store install badge and link once the listing is live.
 - **Done when:** a tag deploys production Worker, creates a GitHub Release, submits the extension.
 
 ---

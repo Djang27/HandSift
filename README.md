@@ -66,7 +66,7 @@ so read these as directions, not guarantees.
 ```mermaid
 flowchart LR
   page["Etsy page<br/>(content script)"] -- "listing IDs" --> sw["Service worker<br/>signals + scoring"]
-  sw -- "IDs not checked in the last 6 h" --> api["HandSift API<br/>(Cloudflare Worker)"]
+  sw -- "uncached IDs" --> api["HandSift API<br/>(Worker)"]
   api -- "cache miss" --> etsy["Etsy Open API v3"]
   api <--> d1[("Shared cache<br/>(D1, 3 h)")]
   sw <--> local[("Local cache<br/>(IndexedDB, 6 h)")]
@@ -87,11 +87,12 @@ Requires Node 24+ and pnpm 12.
 
 ```sh
 pnpm install
-pnpm check                                       # format, lint, typecheck, unit tests, architecture rules
-pnpm test:e2e                                    # the extension in real Chromium, against a mock API
-pnpm --filter @handsift/extension build:staging  # build against the staging API
-pnpm --filter @handsift/worker dev               # run the API locally (needs your own Etsy key)
-pnpm eval                                        # accuracy on data/labels.csv
+pnpm check      # format, lint, types, unit tests, architecture rules
+pnpm test:e2e   # the extension in real Chromium, against a mock API
+pnpm eval       # accuracy on data/labels.csv
+
+pnpm --filter @handsift/extension build:staging   # build against staging
+pnpm --filter @handsift/worker dev                # local API (your own Etsy key)
 ```
 
 | Part                 | Stack                                                                                      |
