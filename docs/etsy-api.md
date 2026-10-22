@@ -14,8 +14,14 @@ Etsy's emails are marked confidential, so they are not quoted here. Daniel keeps
 | Section 5 written authorization (browser extension)   | **Granted** (Oct 2026): HandSift may operate as a Chrome extension that accesses and analyzes Etsy data via the API, and may be distributed to the general public, as described to Etsy. |
 | Features described to Etsy                            | "Seller disclosed AI" and "Possibly AI" labels with reasons; label / blur / hide modes; caching within the 6 h / 24 h limits.                                                            |
 | ML / analytics (on-device image check, accuracy eval) | **Granted** in writing (Oct 2026), per Daniel.                                                                                                                                           |
+| API Terms of Use version                              | Last updated Aug 18, 2026. Re-checked Oct 22, 2026 before the first release (v0.1.0): unchanged.                                                                                         |
 
 Anything beyond what was described (new signals that use other data, new modes) must go to Etsy for approval before it ships.
+
+**Pre-launch check (Oct 22, 2026):** v0.1.0 still does what was described to Etsy: disclosed /
+possibly-AI labels with reasons, label / blur / hide, caching within the limits. Additions since
+approval (first-run consent screen, cache-only mode when the daily quota runs low, logo and
+colors) don't change what data is used or what the app does, so nothing needs resubmitting.
 
 ## Authentication
 

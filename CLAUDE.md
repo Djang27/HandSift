@@ -548,6 +548,7 @@ Each is its own `SignalModule` file.
 - Playwright e2e on a saved search page.
   - Done: `apps/extension/e2e/` builds the extension against a mock Worker (`e2e/mockWorker.ts`, synthetic fixtures), loads it in Chromium, and serves the synthetic search page at an etsy.com URL. Covers consent (nothing sent before agreeing), badges, tooltips, the client cache, and hide mode.
 - Re-read Etsy's API terms for changes; submit the final app behavior to Etsy if it changed since approval.
+  - Done (Oct 22, 2026): terms still dated Aug 18, 2026; behavior matches what Etsy approved (see `docs/etsy-api.md`). Shop pages verified against a saved page.
 - First-run screen: user terms (with Etsy's warranty disclaimer) and privacy policy, accepted by click-through. Support email in the popup and store listing.
   - Done: settings store `termsAcceptedVersion`; `TERMS_VERSION` in `config.ts` (bump it when the terms or policy change in a way users must re-accept). Install (or an update with unaccepted terms) opens `onboarding.html`. Until accepted, the content script requests nothing and the service worker refuses lookups; the popup shows "Review and accept".
 - Display Etsy's required notice prominently in the popup and store listing: "The term 'Etsy' is a trademark of Etsy, Inc. This Application uses Etsy's API, but is not endorsed or certified by Etsy." Follow Etsy's Trademark Policy for any use of the name; never use Etsy's logo or brand styling.
