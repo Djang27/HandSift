@@ -56,3 +56,19 @@ jobs:
           if-no-files-found: error
           # WXT's output dir (.output) is hidden; upload-artifact skips hidden paths by default.
           include-hidden-files: true
+
+      # End-to-end: HandSift in real Chromium against a mock Worker (apps/extension/e2e).
+      - name: Install Playwright's Chromium
+        run: pnpm --filter @handsift/extension exec playwright install --with-deps chromium
+
+      - name: End-to-end tests
+        run: pnpm test:e2e
+
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            apps/extension/playwright-report
+            apps/extension/test-results
+          if-no-files-found: ignore
