@@ -54,7 +54,7 @@ Etsy is the first **site adapter**. The architecture must make adding Pinterest 
 | Settings | chrome.storage.sync |
 | Image classifier (stretch) | transformers.js in an offscreen document |
 | Unit tests | Vitest (extension, shared) + Vitest with Cloudflare's Workers test pool (worker); jsdom for DOM tests; fake-indexeddb for Dexie tests; Testing Library (+ user-event) for React components |
-| E2E tests (later) | Playwright with the extension loaded |
+| E2E tests | Playwright with the extension loaded (Chromium, mock Worker; `pnpm test:e2e`, runs in CI) |
 | Architecture enforcement | dependency-cruiser (import boundary rules, run in CI) |
 | CI/CD | GitHub Actions: CI on every push/PR, Worker deploys via `cloudflare/wrangler-action`, Chrome Web Store submission via `wxt submit` |
 | Lint/format | ESLint + Prettier |
@@ -216,6 +216,7 @@ apps/
         legal.ts                 # Etsy's required notice
         pageController.ts        # applies verdicts + settings to cards (badges, blur, hide)
         contentApp.ts            # content script logic (entrypoint stays wiring only)
+    e2e/                         # Playwright: fixtures, mock Worker, *.e2e.ts
   worker/
     src/
       index.ts                   # entry, wiring only
@@ -530,8 +531,9 @@ Each is its own `SignalModule` file.
   - Name in Etsy's warranty disclaimer: **HandSift**.
   - Repo README styled like a product page (banner, install badges, website link, features + screenshots, changelog, honest accuracy, disclaimer); store badges and screenshots finished after launch.
   - Shipped as separate PRs: budget guard, consent screen, pages + README, Playwright e2e, release workflow.
-- Still open: repo license (none / MIT / GPL-3.0).
+  - License: **none for now** (all rights reserved); revisit later.
 - Playwright e2e on a saved search page.
+  - Done: `apps/extension/e2e/` builds the extension against a mock Worker (`e2e/mockWorker.ts`, synthetic fixtures), loads it in Chromium, and serves the synthetic search page at an etsy.com URL. Covers consent (nothing sent before agreeing), badges, tooltips, the client cache, and hide mode.
 - Re-read Etsy's API terms for changes; submit the final app behavior to Etsy if it changed since approval.
 - First-run screen: user terms (with Etsy's warranty disclaimer) and privacy policy, accepted by click-through. Support email in the popup and store listing.
   - Done: settings store `termsAcceptedVersion`; `TERMS_VERSION` in `config.ts` (bump it when the terms or policy change in a way users must re-accept). Install (or an update with unaccepted terms) opens `onboarding.html`. Until accepted, the content script requests nothing and the service worker refuses lookups; the popup shows "Review and accept".
