@@ -12,6 +12,7 @@
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit && pnpm -r typecheck",
     "test": "pnpm -r test",
+    "test:e2e": "pnpm --filter @handsift/extension test:e2e",
     "depcruise": "depcruise apps packages --config .dependency-cruiser.ts",
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm depcruise",
     "fixtures:fetch": "jiti scripts/fetch-fixtures.ts",

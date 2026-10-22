@@ -10,8 +10,11 @@ dist/
 !.env.example
 !.env.development
 !.env.staging
+!.env.e2e
 worker-configuration.d.ts
 coverage/
+test-results/
+playwright-report/
 *.log
 .DS_Store
 
