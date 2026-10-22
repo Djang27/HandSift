@@ -57,12 +57,29 @@ export const BLUR_RADIUS_PX = 14;
 
 // Settings
 
-/** Precision first: on, label only, flag inferred AI conservatively. */
+/** Precision first: on, label only, flag inferred AI conservatively. Terms not yet accepted. */
 export const DEFAULT_SETTINGS: Settings = {
   enabled: true,
   mode: "label",
   sensitivity: "conservative",
+  termsAcceptedVersion: 0,
 };
+
+// Terms, policy, support
+
+/**
+ * Current version of the terms of use + privacy policy. Bump it when they change in a way
+ * users must re-accept (e.g. what data is sent); HandSift then pauses until they do.
+ */
+export const TERMS_VERSION = 1;
+
+/** HandSift's public site (GitHub Pages, from site/). */
+export const SITE_URL = "https://djang27.github.io/HandSift/";
+export const PRIVACY_URL = `${SITE_URL}privacy.html`;
+export const TERMS_URL = `${SITE_URL}terms.html`;
+
+/** PLACEHOLDER until the dedicated support address exists (also in site/*.html). */
+export const SUPPORT_EMAIL = "support@handsift.invalid";
 
 // Batching
 

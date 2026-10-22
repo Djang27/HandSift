@@ -1,5 +1,10 @@
 // @vitest-environment jsdom
-import { DEFAULT_SETTINGS, type CheckListingsReply, type Settings } from "@handsift/shared";
+import {
+  DEFAULT_SETTINGS,
+  TERMS_VERSION,
+  type CheckListingsReply,
+  type Settings,
+} from "@handsift/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { etsyAdapter } from "../adapters/sites/etsy/etsyAdapter";
 import type { SettingsStore } from "../adapters/storage/settings";
@@ -11,7 +16,7 @@ const REPLY: CheckListingsReply = {
 };
 
 function fakeSettings(initial: Partial<Settings> = {}) {
-  let current: Settings = { ...DEFAULT_SETTINGS, ...initial };
+  let current: Settings = { ...DEFAULT_SETTINGS, termsAcceptedVersion: TERMS_VERSION, ...initial };
   const listeners = new Set<(s: Settings) => void>();
   const store: SettingsStore = {
     get: () => Promise.resolve(current),
@@ -68,6 +73,19 @@ describe("startContentApp", () => {
     await settings.update({ enabled: true });
     await vi.runAllTimersAsync();
     expect(d.checkListings).toHaveBeenCalledOnce();
+  });
+
+  it("requests nothing until the terms are accepted, then starts", async () => {
+    const settings = fakeSettings({ termsAcceptedVersion: 0 });
+    const d = deps({ settings });
+    await startContentApp(d);
+    await vi.runAllTimersAsync();
+    expect(d.checkListings).not.toHaveBeenCalled();
+
+    await settings.update({ termsAcceptedVersion: TERMS_VERSION });
+    await vi.runAllTimersAsync();
+    expect(d.checkListings).toHaveBeenCalledOnce();
+    expect(document.querySelector('[data-listing-id="1"] handsift-badge')).not.toBeNull();
   });
 
   it("answers the popup's stats request", async () => {

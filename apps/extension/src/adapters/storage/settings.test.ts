@@ -40,7 +40,15 @@ describe("parseSettings", () => {
       enabled: false,
       mode: DEFAULT_SETTINGS.mode,
       sensitivity: "balanced",
+      termsAcceptedVersion: DEFAULT_SETTINGS.termsAcceptedVersion,
     });
+  });
+
+  it("reads the accepted terms version, treating bad values as not accepted", () => {
+    expect(parseSettings({ termsAcceptedVersion: 1 }).termsAcceptedVersion).toBe(1);
+    for (const bad of [-1, 1.5, "1", null]) {
+      expect(parseSettings({ termsAcceptedVersion: bad }).termsAcceptedVersion).toBe(0);
+    }
   });
 });
 

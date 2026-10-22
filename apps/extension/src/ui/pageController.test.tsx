@@ -1,10 +1,13 @@
 // @vitest-environment jsdom
-import { DEFAULT_SETTINGS, type Settings, type Verdict } from "@handsift/shared";
+import { DEFAULT_SETTINGS, TERMS_VERSION, type Settings, type Verdict } from "@handsift/shared";
 import { act, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it } from "vitest";
 import { etsyAdapter } from "../adapters/sites/etsy/etsyAdapter";
 import { createPageController } from "./pageController";
+
+/** Defaults plus accepted terms: what a working install looks like. */
+const ACTIVE: Settings = { ...DEFAULT_SETTINGS, termsAcceptedVersion: TERMS_VERSION };
 
 const DISCLOSED: Verdict = {
   listingId: "1",
@@ -55,7 +58,7 @@ function badgeIn(card: Element) {
 
 function controllerWith(settings: Partial<Settings> = {}) {
   const page = setupPage();
-  const controller = createPageController(etsyAdapter, { ...DEFAULT_SETTINGS, ...settings });
+  const controller = createPageController(etsyAdapter, { ...ACTIVE, ...settings });
   for (const id of ["1", "2", "3"]) controller.addItem(id, page(id).card);
   act(() => {
     controller.applyVerdicts([DISCLOSED, CLEAN, MAYBE]);
@@ -99,13 +102,13 @@ describe("pageController", () => {
     const { controller, page } = controllerWith({ mode: "hide" });
 
     act(() => {
-      controller.setSettings({ ...DEFAULT_SETTINGS, mode: "label", sensitivity: "balanced" });
+      controller.setSettings({ ...ACTIVE, mode: "label", sensitivity: "balanced" });
     });
     expect(page("1").li.style.display).toBe("");
     expect(badgeIn(page("3").card)?.getByRole("button", { name: "Likely AI" })).toBeTruthy();
 
     act(() => {
-      controller.setSettings({ ...DEFAULT_SETTINGS, enabled: false });
+      controller.setSettings({ ...ACTIVE, enabled: false });
     });
     expect(badgeIn(page("1").card)).toBeNull();
     expect(badgeIn(page("3").card)).toBeNull();
@@ -128,7 +131,7 @@ describe("pageController", () => {
     const { controller, page } = controllerWith();
     expect(controller.stats()).toEqual({ checked: 3, disclosed: 1, likely: 0 });
     act(() => {
-      controller.setSettings({ ...DEFAULT_SETTINGS, sensitivity: "balanced" });
+      controller.setSettings({ ...ACTIVE, sensitivity: "balanced" });
     });
     expect(controller.stats()).toEqual({ checked: 3, disclosed: 1, likely: 1 });
     page("2").li.remove();

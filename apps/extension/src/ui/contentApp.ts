@@ -8,6 +8,7 @@ import type { SiteAdapter } from "@handsift/shared/interfaces";
 import { observePageItems } from "../adapters/page/observePageItems";
 import type { SettingsStore } from "../adapters/storage/settings";
 import { createBatchQueue } from "../core/batchQueue";
+import { isActive } from "../core/consent";
 import { createPageController } from "./pageController";
 
 export interface ContentAppDeps {
@@ -19,9 +20,9 @@ export interface ContentAppDeps {
 }
 
 /**
- * Runs HandSift on one page: watches items while enabled (nothing is requested while
- * off), batches their IDs to the service worker, and renders verdicts. Returns a stop
- * function.
+ * Runs HandSift on one page: watches items while active (turned on and terms accepted;
+ * nothing is requested otherwise), batches their IDs to the service worker, and renders
+ * verdicts. Returns a stop function.
  */
 export async function startContentApp(deps: ContentAppDeps): Promise<() => void> {
   const initial = await deps.settings.get();
@@ -54,10 +55,10 @@ export async function startContentApp(deps: ContentAppDeps): Promise<() => void>
     queue.stop();
   };
 
-  if (initial.enabled) startObserving();
+  if (isActive(initial)) startObserving();
   const unsubscribeSettings = deps.settings.onChange((next) => {
     controller.setSettings(next);
-    if (next.enabled) startObserving();
+    if (isActive(next)) startObserving();
     else pause();
   });
   const unsubscribeStats = deps.onGetPageStats(() => controller.stats());
