@@ -249,6 +249,7 @@ fixtures/
   real/                          # gitignored: raw Etsy JSON + saved pages, local only
     listings/  shops/  search-pages/
   synthetic/                     # committed: same shape as real, made-up content
+site/                            # GitHub Pages: landing page, privacy.html, terms.html (plain HTML)
 scripts/
   fetch-fixtures.ts
   eval.ts                        # pnpm eval: runs core/ in Node on data/labels.csv
@@ -258,6 +259,7 @@ docs/
 .github/workflows/
   ci.yml
   deploy-staging.yml
+  pages.yml                      # publishes site/ to GitHub Pages
   release.yml
 .dependency-cruiser.ts
 ```

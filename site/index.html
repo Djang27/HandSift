@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HandSift: see which Etsy listings are AI-made</title>
+    <meta
+      name="description"
+      content="HandSift is a free browser extension that labels AI-generated listings on Etsy and always explains why."
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main>
+      <nav aria-label="Site">
+        <a href="./">HandSift</a>
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
+        <a href="https://github.com/Djang27/HandSift">GitHub</a>
+      </nav>
+
+      <h1>See which Etsy listings are AI-made, and why.</h1>
+      <p class="lead">
+        HandSift is a free browser extension for Etsy shoppers who want handmade work. It labels
+        AI-generated listings in search results and always shows its reasons.
+      </p>
+      <!-- Replace with the Chrome Web Store link once HandSift is published. -->
+      <p><a class="button" aria-disabled="true">Coming soon to the Chrome Web Store</a></p>
+
+      <h2>Two kinds of labels</h2>
+      <div class="cards">
+        <div class="card">
+          <h3><span class="pill pill--disclosed">AI · disclosed</span></h3>
+          <p>The seller says AI was used, in the title, description, tags, or materials. A fact.</p>
+        </div>
+        <div class="card">
+          <h3><span class="pill pill--likely">Likely AI</span></h3>
+          <p>No disclosure, but several clues add up. HandSift's estimate, and it can be wrong.</p>
+        </div>
+      </div>
+
+      <h2>Built to avoid wrongly flagging artists</h2>
+      <p>
+        HandSift prefers missing an AI listing over mislabeling a real maker. It ignores sellers who
+        say they don't use AI, never treats one weak clue as proof, and lets you choose how cautious
+        it is. Today it reliably catches sellers who disclose AI; most undisclosed AI isn't detected
+        yet.
+      </p>
+
+      <h2>Your choice of what happens</h2>
+      <div class="cards">
+        <div class="card">
+          <h3>Label</h3>
+          <p>Add a badge and keep the listing visible.</p>
+        </div>
+        <div class="card">
+          <h3>Blur</h3>
+          <p>Blur flagged photos, with a one-click reveal.</p>
+        </div>
+        <div class="card">
+          <h3>Hide</h3>
+          <p>Remove flagged listings from the results.</p>
+        </div>
+      </div>
+
+      <h2>Private by design</h2>
+      <p>
+        HandSift only sends the ID numbers of the listings on the Etsy page you're viewing, so it
+        can look up those listings through Etsy's official API. No account, no tracking, no ads,
+        nothing about you.
+        <a href="privacy.html">Read the privacy policy.</a>
+      </p>
+
+      <footer>
+        <p>
+          The term 'Etsy' is a trademark of Etsy, Inc. This Application uses Etsy's API, but is not
+          endorsed or certified by Etsy.
+        </p>
+        <!-- PLACEHOLDER: replace with HandSift's support address. -->
+        <p>Support: <a href="mailto:support@handsift.invalid">support@handsift.invalid</a></p>
+      </footer>
+    </main>
+  </body>
+</html>
