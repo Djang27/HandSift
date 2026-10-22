@@ -172,6 +172,7 @@ apps/
         background.ts            # wiring only
         content.ts               # wiring only
         popup/                   # settings UI
+        onboarding/              # first-run page: terms + privacy consent
         offscreen/               # stretch: classifier
       adapters/
         sites/
@@ -189,9 +190,12 @@ apps/
           settings.ts            # chrome.storage.sync wrapper
         messaging/
           bus.ts                 # typed chrome.runtime messaging wrapper
+        browser/
+          onboardingTab.ts       # opens the welcome page
       core/
         pipeline.ts              # orchestration, depends only on interfaces
         batchQueue.ts            # batches visible listing IDs
+        consent.ts               # terms accepted? (nothing runs until they are)
         text.ts                  # text normalization helpers for signals
         eval/                    # metrics + labels parser for scripts/eval.ts (not shipped)
         signals/
@@ -208,6 +212,8 @@ apps/
       ui/
         badge/                   # Badge.tsx, Tooltip.tsx, badge.css, renderBadge.tsx (Shadow DOM)
         popup/                   # Popup.tsx, ChoiceGroup.tsx, popup.css
+        onboarding/              # Onboarding.tsx, onboarding.css
+        legal.ts                 # Etsy's required notice
         pageController.ts        # applies verdicts + settings to cards (badges, blur, hide)
         contentApp.ts            # content script logic (entrypoint stays wiring only)
   worker/
@@ -517,6 +523,7 @@ Each is its own `SignalModule` file.
 - Playwright e2e on a saved search page.
 - Re-read Etsy's API terms for changes; submit the final app behavior to Etsy if it changed since approval.
 - First-run screen: user terms (with Etsy's warranty disclaimer) and privacy policy, accepted by click-through. Support email in the popup and store listing.
+  - Done: settings store `termsAcceptedVersion`; `TERMS_VERSION` in `config.ts` (bump it when the terms or policy change in a way users must re-accept). Install (or an update with unaccepted terms) opens `onboarding.html`. Until accepted, the content script requests nothing and the service worker refuses lookups; the popup shows "Review and accept".
 - Display Etsy's required notice prominently in the popup and store listing: "The term 'Etsy' is a trademark of Etsy, Inc. This Application uses Etsy's API, but is not endorsed or certified by Etsy." Follow Etsy's Trademark Policy for any use of the name; never use Etsy's logo or brand styling.
 - **Manual step for me:** Chrome Web Store developer account, first manual upload for the extension ID, CWS API credentials into GitHub secrets.
 - `release.yml`, tested with a `v0.1.0` tag.
