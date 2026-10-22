@@ -8,6 +8,7 @@ import {
   fetchListingsBatch,
   type EtsyBatchResult,
 } from "../etsy/etsyClient";
+import { EtsyBudgetError } from "../etsy/budgetGuard";
 import { handleListings, type ListingsDeps } from "./listings";
 
 const NOW = 1_800_000_000_000;
@@ -130,6 +131,7 @@ describe("handleListings", () => {
   it.each([
     ["rate limited", new EtsyRateLimitedError("429")],
     ["erroring", new EtsyUpstreamError("500")],
+    ["paused by the daily budget guard", new EtsyBudgetError("quota low")],
   ])("returns cached results and marks the rest unavailable when Etsy is %s", async (_, error) => {
     const warm = deps();
     await call(`?ids=${A}`, warm);
