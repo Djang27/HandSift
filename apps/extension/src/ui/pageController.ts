@@ -1,5 +1,6 @@
 import type { PageStats, Settings, Verdict } from "@handsift/shared";
 import type { ItemDisplay, SiteAdapter } from "@handsift/shared/interfaces";
+import { isActive } from "../core/consent";
 import { displayLevel } from "../core/scoring/levels";
 import { renderBadge, unrenderBadge } from "./badge/renderBadge";
 
@@ -38,7 +39,7 @@ export function createPageController(adapter: SiteAdapter, initial: Settings): P
     const verdict = verdicts.get(id);
     const level = levelOf(id);
     const flagged = level === "disclosed_ai" || level === "likely_ai";
-    if (!settings.enabled || !verdict || !flagged) {
+    if (!isActive(settings) || !verdict || !flagged) {
       clear(el);
       return;
     }
