@@ -78,8 +78,8 @@ export const SITE_URL = "https://djang27.github.io/HandSift/";
 export const PRIVACY_URL = `${SITE_URL}privacy.html`;
 export const TERMS_URL = `${SITE_URL}terms.html`;
 
-/** PLACEHOLDER until the dedicated support address exists (also in site/*.html). */
-export const SUPPORT_EMAIL = "support@handsift.invalid";
+/** Monitored support inbox (Etsy API Terms + Chrome Web Store). Also in site/*.html. */
+export const SUPPORT_EMAIL = "handsift.extension@outlook.com";
 
 // Batching
 

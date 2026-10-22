@@ -526,7 +526,7 @@ Each is its own `SignalModule` file.
 ### Phase 12: Hardening + ship
 - Decided (Oct 21, 2026):
   - Privacy policy, terms, and a simple landing page on **GitHub Pages** (from this repo); a custom domain can be added later (GitHub redirects the old links).
-  - Support email: a **new dedicated Gmail** (placeholder in `config.ts` until Daniel creates it).
+  - Support email: **handsift.extension@outlook.com**, a dedicated inbox (`SUPPORT_EMAIL` in `config.ts`, also in `site/*.html`).
   - Name in Etsy's warranty disclaimer: **HandSift**.
   - Repo README styled like a product page (banner, install badges, website link, features + screenshots, changelog, honest accuracy, disclaimer); store badges and screenshots finished after launch.
   - Shipped as separate PRs: budget guard, consent screen, pages + README, Playwright e2e, release workflow.
