@@ -4,7 +4,7 @@
   --muted: #6b7280;
   --bg: #ffffff;
   --line: #e5e7eb;
-  --accent: #1f2937;
+  --accent: #0f766e; /* HandSift teal (branding/logo.svg) */
   --accent-fg: #ffffff;
   --ok: #047857;
 }
@@ -14,7 +14,7 @@
     --muted: #9ca3af;
     --bg: #111827;
     --line: #374151;
-    --accent: #f3f4f6;
+    --accent: #2dd4bf;
     --accent-fg: #111827;
     --ok: #34d399;
   }
@@ -24,6 +24,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--fg);
+  accent-color: var(--accent);
   font:
     16px/1.55 system-ui,
     -apple-system,
@@ -39,6 +40,10 @@ a {
   max-width: 620px;
   margin: 0 auto;
   padding: 48px 16px;
+}
+.onboarding__logo {
+  display: block;
+  margin-bottom: 16px;
 }
 .onboarding h1 {
   margin: 0 0 8px;

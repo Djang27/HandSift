@@ -5,7 +5,7 @@
   --bg: #ffffff;
   --panel: #f6f8fa;
   --line: #d1d9e0;
-  --accent: #1f2937;
+  --accent: #0f766e; /* HandSift teal (branding/logo.svg) */
   --likely: #92400e;
   --likely-bg: #fffbeb;
   --likely-line: #d97706;
@@ -17,7 +17,7 @@
     --bg: #0d1117;
     --panel: #151b23;
     --line: #3d444d;
-    --accent: #e6edf3;
+    --accent: #2dd4bf;
     --likely: #fbbf24;
     --likely-bg: #2a1f05;
   }
@@ -49,6 +49,13 @@ nav {
 }
 a {
   color: inherit;
+}
+.brand {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  font-weight: 600;
+  text-decoration: none;
 }
 h1 {
   font-size: 32px;

@@ -11,6 +11,7 @@
     "build:staging": "wxt build --mode staging",
     "build:e2e": "wxt build --mode e2e",
     "zip": "wxt zip",
+    "icons": "jiti scripts/renderIcons.ts",
     "typecheck": "wxt prepare && tsc --noEmit",
     "test": "vitest run --passWithNoTests",
     "test:e2e": "wxt build --mode e2e && playwright test"

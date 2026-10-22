@@ -1,6 +1,7 @@
 import { PRIVACY_URL, SUPPORT_EMAIL, TERMS_URL, TERMS_VERSION } from "@handsift/shared";
 import { useEffect, useState } from "react";
 import type { SettingsStore } from "../../adapters/storage/settings";
+import logoUrl from "../../assets/logo.svg";
 import { hasConsented } from "../../core/consent";
 import { ETSY_NOTICE } from "../legal";
 
@@ -33,6 +34,7 @@ export function Onboarding({ settings }: OnboardingProps) {
 
   return (
     <main className="onboarding">
+      <img className="onboarding__logo" src={logoUrl} alt="" width={56} height={56} />
       <h1>Welcome to HandSift</h1>
       <p className="onboarding__lede">
         HandSift labels AI-generated listings on Etsy search and shop pages, and tells you why.
