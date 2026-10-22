@@ -1,5 +1,6 @@
 import { createRoot } from "react-dom/client";
 import { browser } from "wxt/browser";
+import { openOnboardingTab } from "../../adapters/browser/onboardingTab";
 import { requestClearCache, requestPageStats } from "../../adapters/messaging/bus";
 import { createSettingsStore } from "../../adapters/storage/settings";
 import { Popup } from "../../ui/popup/Popup";
@@ -18,6 +19,11 @@ if (root) {
       settings={createSettingsStore()}
       clearCache={() => requestClearCache()}
       getPageStats={activeTabStats}
+      openOnboarding={() => {
+        void openOnboardingTab().then(() => {
+          window.close();
+        });
+      }}
     />,
   );
 }

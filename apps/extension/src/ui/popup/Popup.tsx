@@ -1,5 +1,8 @@
 import {
   DEFAULT_SETTINGS,
+  PRIVACY_URL,
+  SUPPORT_EMAIL,
+  TERMS_URL,
   type ClearCacheReply,
   type DisplayMode,
   type PageStats,
@@ -8,6 +11,8 @@ import {
 } from "@handsift/shared";
 import { useEffect, useState } from "react";
 import type { SettingsStore } from "../../adapters/storage/settings";
+import { hasConsented } from "../../core/consent";
+import { ETSY_NOTICE } from "../legal";
 import { ChoiceGroup } from "./ChoiceGroup";
 
 export interface PopupProps {
@@ -15,6 +20,8 @@ export interface PopupProps {
   clearCache: () => Promise<ClearCacheReply | null>;
   /** Stats from the active tab, or null if it isn't an Etsy page. */
   getPageStats: () => Promise<PageStats | null>;
+  /** Opens the welcome page, where the user accepts the terms. */
+  openOnboarding: () => void;
 }
 
 const MODES: { value: DisplayMode; label: string }[] = [
@@ -29,16 +36,17 @@ const SENSITIVITIES: { value: Sensitivity; label: string; hint: string }[] = [
   { value: "aggressive", label: "Aggressive", hint: "Most flags, most mistakes" },
 ];
 
-const ETSY_NOTICE =
-  "The term 'Etsy' is a trademark of Etsy, Inc. This Application uses Etsy's API, but is not endorsed or certified by Etsy.";
-
-export function Popup({ settings, clearCache, getPageStats }: PopupProps) {
+export function Popup({ settings, clearCache, getPageStats, openOnboarding }: PopupProps) {
   const [current, setCurrent] = useState<Settings>(DEFAULT_SETTINGS);
+  const [loaded, setLoaded] = useState(false);
   const [stats, setStats] = useState<PageStats | null | undefined>(undefined);
   const [cacheStatus, setCacheStatus] = useState<string>("");
 
   useEffect(() => {
-    void settings.get().then(setCurrent);
+    void settings.get().then((s) => {
+      setCurrent(s);
+      setLoaded(true);
+    });
     void getPageStats().then(setStats);
     return settings.onChange(setCurrent);
   }, [settings, getPageStats]);
@@ -46,6 +54,7 @@ export function Popup({ settings, clearCache, getPageStats }: PopupProps) {
   const update = (patch: Partial<Settings>) => {
     void settings.update(patch).then(setCurrent);
   };
+  const consented = hasConsented(current);
 
   return (
     <main className="popup">
@@ -64,7 +73,16 @@ export function Popup({ settings, clearCache, getPageStats }: PopupProps) {
         </label>
       </header>
 
-      <fieldset className="popup__settings" disabled={!current.enabled}>
+      {loaded && !consented ? (
+        <section className="popup__consent" aria-label="Terms not accepted">
+          <p>HandSift is paused until you accept its terms of use and privacy policy.</p>
+          <button type="button" onClick={openOnboarding}>
+            Review and accept
+          </button>
+        </section>
+      ) : null}
+
+      <fieldset className="popup__settings" disabled={!current.enabled || !consented}>
         <ChoiceGroup
           legend="When a listing is flagged"
           name="mode"
@@ -116,6 +134,16 @@ export function Popup({ settings, clearCache, getPageStats }: PopupProps) {
         <p>
           <strong>Disclosed</strong> = the seller said so. <strong>Likely</strong> = HandSift's
           estimate, which can be wrong.
+        </p>
+        <p className="popup__links">
+          <a href={PRIVACY_URL} target="_blank" rel="noreferrer">
+            Privacy
+          </a>{" "}
+          ·{" "}
+          <a href={TERMS_URL} target="_blank" rel="noreferrer">
+            Terms
+          </a>{" "}
+          · <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>
         </p>
         <p className="popup__notice">{ETSY_NOTICE}</p>
       </footer>
