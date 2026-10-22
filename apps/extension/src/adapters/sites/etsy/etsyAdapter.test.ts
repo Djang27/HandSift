@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
 import syntheticPage from "../../../../../../fixtures/synthetic/search-pages/search-results.html?raw";
+import syntheticShopPage from "../../../../../../fixtures/synthetic/search-pages/shop-home.html?raw";
 import { etsyAdapter } from "./etsyAdapter";
 
 const realPages = import.meta.glob<string>("../../../../../../fixtures/real/search-pages/*.html", {
@@ -52,6 +53,35 @@ describe("etsyAdapter on the synthetic search page", () => {
   });
 });
 
+describe("etsyAdapter on the synthetic shop page", () => {
+  const doc = parse(syntheticShopPage);
+
+  it("finds the shop's cards, including the featured row", () => {
+    expect(ids(doc)).toEqual(["1000000002", "1000000002", "1000000003", "1000000005"]);
+  });
+
+  it("hides just the card (it is its own grid cell) and restores it", () => {
+    const [, card, next] = etsyAdapter.findItemElements(doc);
+    if (!(card instanceof HTMLElement) || !(next instanceof HTMLElement))
+      throw new Error("no card");
+    etsyAdapter.setItemDisplay(card, "hidden");
+    expect(card.style.display).toBe("none");
+    expect(card.parentElement?.style.display).toBe("");
+    expect(next.style.display).toBe("");
+    etsyAdapter.setItemDisplay(card, "visible");
+    expect(card.style.display).toBe("");
+  });
+
+  it("blurs the card's photo", () => {
+    const [card] = etsyAdapter.findItemElements(doc);
+    const img = card?.querySelector("img");
+    if (!card || !img) throw new Error("no card");
+    etsyAdapter.setItemDisplay(card, "blurred");
+    expect(img.style.filter).toMatch(/^blur\(/);
+    etsyAdapter.setItemDisplay(card, "visible");
+  });
+});
+
 describe("etsyAdapter display", () => {
   function gridWithCard(): { li: HTMLLIElement; card: Element; img: HTMLImageElement } {
     const doc = parse(
@@ -98,7 +128,7 @@ describe("etsyAdapter display", () => {
 });
 
 describe.skipIf(Object.keys(realPages).length === 0)(
-  "etsyAdapter on real saved search pages",
+  "etsyAdapter on real saved search and shop pages",
   () => {
     it.each(Object.entries(realPages))("finds and identifies every card in %s", (_, html) => {
       const doc = parse(html);
