@@ -4,7 +4,7 @@
   --muted: #6b7280;
   --bg: #ffffff;
   --line: #e5e7eb;
-  --accent: #1f2937;
+  --accent: #0f766e; /* HandSift teal (branding/logo.svg) */
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -12,7 +12,7 @@
     --muted: #9ca3af;
     --bg: #111827;
     --line: #374151;
-    --accent: #f3f4f6;
+    --accent: #2dd4bf;
   }
 }
 
@@ -20,6 +20,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--fg);
+  accent-color: var(--accent);
   font:
     14px/1.45 system-ui,
     -apple-system,
@@ -38,6 +39,9 @@ body {
   justify-content: space-between;
 }
 .popup__header h1 {
+  display: flex;
+  gap: 8px;
+  align-items: center;
   margin: 0;
   font-size: 17px;
 }

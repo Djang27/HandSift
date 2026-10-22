@@ -11,6 +11,7 @@ import {
 } from "@handsift/shared";
 import { useEffect, useState } from "react";
 import type { SettingsStore } from "../../adapters/storage/settings";
+import logoUrl from "../../assets/logo.svg";
 import { hasConsented } from "../../core/consent";
 import { ETSY_NOTICE } from "../legal";
 import { ChoiceGroup } from "./ChoiceGroup";
@@ -59,7 +60,10 @@ export function Popup({ settings, clearCache, getPageStats, openOnboarding }: Po
   return (
     <main className="popup">
       <header className="popup__header">
-        <h1>HandSift</h1>
+        <h1>
+          <img src={logoUrl} alt="" width={22} height={22} />
+          HandSift
+        </h1>
         <label className="switch">
           <input
             type="checkbox"
