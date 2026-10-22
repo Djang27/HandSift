@@ -254,6 +254,10 @@ packages/
       api.ts                     # Worker request/response contracts
       config.ts                  # all tunables
       interfaces.ts              # SiteAdapter, ItemSource, SignalModule, VerdictStore
+store/
+  listing.md                     # Chrome Web Store dashboard text (description, permissions, privacy answers)
+  images/                        # store screenshots + promo tile (`pnpm --filter @handsift/extension store:images`)
+  demo/search.html               # neutral demo results page the screenshots run on
 branding/
   logo.svg                       # logo source of truth (teal #0F766E, sparkle #FDE68A)
 fixtures/
@@ -525,6 +529,7 @@ Each is its own `SignalModule` file.
 - Tests use the Workers Vitest pool with a local D1 binding and migrations applied (`test/applyMigrations.ts`).
 - Migrations are forward-only and committed to the repo; CI applies them before deploys.
 - **Done when:** a second "user" (fresh browser profile) gets results with zero Etsy calls, and expired rows are cleaned up.
+  - Verified on staging: zero Etsy calls for the second user (Oct 19, 2026); the ~100 rows from the Oct 21 eval runs were gone by Oct 22, deleted by the hourly cleanup (the only code that deletes rows).
 
 ### Phase 11 (stretch): Image classifier
 - **Deferred until after launch** (decided Oct 21, 2026). Plan when picked up: first an offline experiment running 2–3 openly licensed AI-image detectors on the labeled listings' photos; build it into the extension only if one separates undisclosed AI from human listings without false flags.
@@ -550,6 +555,7 @@ Each is its own `SignalModule` file.
 - `release.yml`, tested with a `v0.1.0` tag.
   - Written (Oct 22, 2026); extension version bumped to 0.1.0. Not yet run: the first `v0.1.0` tag is its test.
 - Store listing: privacy policy (only listing IDs sent to our Worker, forwarded to Etsy; IP addresses used transiently for rate limiting and never logged or stored), permission justifications, screenshots, README with honest accuracy notes.
+  - Done: `store/listing.md` (paste-ready dashboard text) and `store/images/` (three 1280×800 screenshots of the real extension on a neutral demo page, never real Etsy pages or sellers' photos; 440×280 promo tile). README still to do.
 - **Done when:** a tag deploys production Worker, creates a GitHub Release, submits the extension.
 
 ---

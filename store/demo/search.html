@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Search results</title>
+    <!--
+      Demo results page for the store screenshots (apps/extension/scripts/renderStoreImages.ts).
+      Neutral styling on purpose: no Etsy branding or look. Listing IDs and titles match
+      fixtures/synthetic/etsy/listings-batch.json; the artwork is drawn here, not real photos.
+      Cards use the markup HandSift's Etsy adapter expects (data-listing-card-v2 inside an li).
+    -->
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #f7f7f5;
+        color: #222;
+        font:
+          14px/1.4 system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+      }
+      .caption {
+        display: flex;
+        gap: 14px;
+        align-items: center;
+        height: 76px;
+        padding: 0 40px;
+        background: #0f766e;
+        color: #fff;
+        font-size: 26px;
+        font-weight: 700;
+      }
+      .caption:empty {
+        display: none;
+      }
+      .caption img {
+        width: 44px;
+        height: 44px;
+      }
+      .bar {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        padding: 14px 40px;
+        background: #fff;
+        border-bottom: 1px solid #e5e5e0;
+      }
+      .search {
+        flex: 1;
+        max-width: 560px;
+        padding: 9px 16px;
+        border: 1.5px solid #ccc;
+        border-radius: 999px;
+        color: #555;
+      }
+      .count {
+        color: #666;
+      }
+      ul {
+        list-style: none;
+        margin: 0;
+        padding: 20px 40px;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+      }
+      [data-listing-card-v2] {
+        position: relative;
+        background: #fff;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgb(0 0 0 / 0.08);
+      }
+      [data-listing-card-v2] img {
+        display: block;
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+      }
+      .info {
+        padding: 10px 12px 12px;
+      }
+      .title {
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .meta {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 4px;
+        color: #666;
+        font-size: 13px;
+      }
+      .price {
+        color: #222;
+        font-weight: 700;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="caption"></div>
+    <div class="bar">
+      <div class="search">wall art and gifts</div>
+      <span class="count">8 results</span>
+    </div>
+    <ul id="results"></ul>
+
+    <script>
+      // [id, title, shop, price, artwork]
+      const LISTINGS = [
+        [
+          "1000000001",
+          "AI Generated Botanical Print (Digital Download)",
+          "LeafLoft",
+          "$4.50",
+          "botanical",
+        ],
+        ["1000000004", "Wheel Thrown Stoneware Mug, 14 oz", "RiverClayStudio", "$38.00", "mug"],
+        [
+          "1000000002",
+          "Custom Royal Pet Portrait, AI Art Print",
+          "RegalPaws",
+          "$24.00",
+          "portrait",
+        ],
+        ["1000000005", "Hammered Sterling Silver Band Ring", "NorthForge", "$56.00", "ring"],
+        ["1000000006", "Hand Knit Striped Wool Beanie", "WoolAndWillow", "$42.00", "beanie"],
+        [
+          "1000000003",
+          "Sleeping Dragon, AI Generated Wall Art, Canvas Print",
+          "MythWalls",
+          "$31.00",
+          "dragon",
+        ],
+        ["1000000007", "Funny Coffee Quote Graphic Tee", "BrewedTees", "$22.00", "tee"],
+        [
+          "1000000008",
+          "Not A Morning Person Coffee Mug, 11 oz",
+          "MorningMugCo",
+          "$16.00",
+          "quoteMug",
+        ],
+      ];
+
+      const ART = {
+        botanical: `<rect width="400" height="300" fill="#eef3e6"/><rect x="120" y="30" width="160" height="240" fill="#fff" stroke="#c9d3bd" stroke-width="6"/><path d="M200 240V90" stroke="#3f6b3a" stroke-width="5"/><ellipse cx="172" cy="120" rx="30" ry="12" fill="#6b9a5b" transform="rotate(-35 172 120)"/><ellipse cx="228" cy="150" rx="32" ry="12" fill="#5d8a4e" transform="rotate(35 228 150)"/><ellipse cx="170" cy="185" rx="34" ry="13" fill="#7aa86a" transform="rotate(-30 170 185)"/><ellipse cx="226" cy="210" rx="28" ry="11" fill="#6b9a5b" transform="rotate(30 226 210)"/>`,
+        mug: `<rect width="400" height="300" fill="#efe6da"/><rect x="140" y="95" width="110" height="130" rx="14" fill="#8a5a3c"/><path d="M250 125h18a26 26 0 0 1 0 52h-18" fill="none" stroke="#8a5a3c" stroke-width="14"/><rect x="140" y="95" width="110" height="26" rx="10" fill="#b98b62"/><ellipse cx="200" cy="232" rx="80" ry="8" fill="#d8ccbb"/>`,
+        portrait: `<rect width="400" height="300" fill="#3b2f5c"/><rect x="125" y="35" width="150" height="230" rx="10" fill="#c9a640"/><rect x="140" y="50" width="120" height="200" fill="#e9dcc0"/><path d="M155 250c0-50 20-70 45-70s45 20 45 70z" fill="#7b2d3a"/><circle cx="200" cy="135" r="34" fill="#b88a5a"/><path d="M168 112l-12-30 26 18zM232 112l12-30-26 18z" fill="#9b6f45"/><path d="M178 92l10-16 12 14 12-14 10 16z" fill="#e2c35a"/>`,
+        ring: `<rect width="400" height="300" fill="#dfe6ec"/><circle cx="200" cy="150" r="62" fill="none" stroke="#a7b1ba" stroke-width="24"/><circle cx="200" cy="150" r="62" fill="none" stroke="#eef2f5" stroke-width="6" stroke-dasharray="4 10"/><ellipse cx="200" cy="232" rx="70" ry="7" fill="#c8d1d9"/>`,
+        beanie: `<rect width="400" height="300" fill="#f6e3e6"/><path d="M120 200a80 85 0 0 1 160 0z" fill="#d9677a"/><rect x="112" y="196" width="176" height="34" rx="8" fill="#b84d61"/><path d="M128 170h144M136 145h128" stroke="#f3c6cf" stroke-width="12"/><circle cx="200" cy="105" r="18" fill="#f3c6cf"/>`,
+        dragon: `<rect width="400" height="300" fill="#1c2541"/><circle cx="300" cy="70" r="30" fill="#f2e6b6"/><path d="M90 220c40-60 90-40 120-80s70-20 90 10c-30-10-50 0-70 30s-80 50-140 40z" fill="#3a7d6b"/><path d="M200 150l20-40 10 35z" fill="#2c6455"/><circle cx="282" cy="158" r="4" fill="#f2e6b6"/>`,
+        tee: `<rect width="400" height="300" fill="#ececec"/><path d="M145 70l-55 35 25 40 30-15v110h110V130l30 15 25-40-55-35c-10 18-30 26-55 26s-45-8-55-26z" fill="#2f4858"/><rect x="170" y="140" width="60" height="6" rx="3" fill="#f2c14e"/><rect x="160" y="154" width="80" height="6" rx="3" fill="#f2c14e"/>`,
+        quoteMug: `<rect width="400" height="300" fill="#fbfbfb"/><rect x="140" y="90" width="110" height="130" rx="10" fill="#fff" stroke="#ddd" stroke-width="4"/><path d="M250 120h18a26 26 0 0 1 0 52h-18" fill="none" stroke="#ddd" stroke-width="12"/><rect x="160" y="130" width="70" height="7" rx="3" fill="#333"/><rect x="160" y="146" width="56" height="7" rx="3" fill="#333"/><rect x="160" y="162" width="64" height="7" rx="3" fill="#333"/>`,
+      };
+
+      const art = (name) =>
+        "data:image/svg+xml," +
+        encodeURIComponent(
+          `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">${ART[name]}</svg>`,
+        );
+
+      const results = document.getElementById("results");
+      for (const [id, title, shop, price, artwork] of LISTINGS) {
+        const li = document.createElement("li");
+        li.innerHTML = `
+          <div data-listing-card-v2 data-listing-id="${id}">
+            <img src="${art(artwork)}" alt="" />
+            <div class="info">
+              <div class="title">${title}</div>
+              <div class="meta"><span>${shop}</span><span class="price">${price}</span></div>
+            </div>
+          </div>`;
+        results.append(li);
+      }
+
+      // ?caption=... adds the store screenshot's headline bar. The render script serves
+      // /handsift-logo.svg from branding/logo.svg.
+      const caption = new URLSearchParams(location.search).get("caption");
+      if (caption) {
+        const bar = document.querySelector(".caption");
+        bar.innerHTML = `<img src="/handsift-logo.svg" alt="" />`;
+        bar.append(caption);
+      }
+    </script>
+  </body>
+</html>
