@@ -6,6 +6,8 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+  # release.yml runs this whole workflow first.
+  workflow_call:
 
 permissions:
   contents: read

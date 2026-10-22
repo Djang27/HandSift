@@ -1,0 +1,162 @@
+name: Release
+
+# Push a tag like v0.1.0 (matching apps/extension/package.json) on a commit in main:
+#   1. full CI, 2. production Worker (migrations, deploy, /health),
+#   3. extension zip built against production, a GitHub Release, and (once the Chrome Web
+#      Store credentials exist) submission for review.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  worker:
+    needs: ci
+    runs-on: ubuntu-latest
+    # Add required reviewers to this environment (Settings > Environments) to approve
+    # each production deploy by hand.
+    environment: production
+    env:
+      WRANGLER_SEND_METRICS: "false"
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Tag must be on main
+        run: |
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::$GITHUB_REF_NAME is not on main. Tag a commit that is."
+            exit 1
+          fi
+
+      # Checked before anything deploys, so a mistyped tag changes nothing.
+      - name: Tag must match the extension version
+        run: |
+          version=$(node -p "require('./apps/extension/package.json').version")
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match apps/extension/package.json ($version)"
+            exit 1
+          fi
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Migrations are forward-only and must land before the code that uses them.
+      - name: Apply D1 migrations (production)
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: apps/worker
+          packageManager: pnpm
+          command: d1 migrations apply DB --remote --env production
+
+      - name: Deploy Worker to production
+        id: deploy
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: apps/worker
+          packageManager: pnpm
+          environment: production
+
+      - name: Smoke test /health
+        env:
+          WORKER_URL: ${{ vars.PRODUCTION_WORKER_URL }}
+        run: |
+          if [ -z "$WORKER_URL" ]; then
+            echo "::error::Repository variable PRODUCTION_WORKER_URL is not set"
+            exit 1
+          fi
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            if curl -fsS "$WORKER_URL/health" | grep -q '"status":"ok"'; then
+              echo "Healthy: $WORKER_URL"
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "::error::$WORKER_URL/health did not return ok"
+          exit 1
+
+  extension:
+    needs: worker
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # create the GitHub Release
+    env:
+      CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build and zip (production)
+        env:
+          WXT_WORKER_URL: ${{ vars.PRODUCTION_WORKER_URL }}
+        run: pnpm --filter @handsift/extension zip
+
+      - name: Built manifest must match the tag
+        id: version
+        run: |
+          expected="${GITHUB_REF_NAME#v}"
+          package=$(node -p "require('./apps/extension/package.json').version")
+          manifest=$(node -p "require('./apps/extension/.output/chrome-mv3/manifest.json').version")
+          echo "tag=$expected package.json=$package manifest=$manifest"
+          if [ "$package" != "$expected" ] || [ "$manifest" != "$expected" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match the extension version ($package)"
+            exit 1
+          fi
+          echo "zip=apps/extension/.output/handsift-$expected-chrome.zip" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >
+          gh release create "$GITHUB_REF_NAME" "${{ steps.version.outputs.zip }}"
+          --verify-tag --generate-notes --title "HandSift $GITHUB_REF_NAME"
+
+      # Skipped until the extension exists in the store (first upload is manual) and the
+      # CHROME_* secrets are set. Chrome Web Store API v2, service-account auth.
+      - name: Submit to the Chrome Web Store
+        if: env.CHROME_EXTENSION_ID != ''
+        env:
+          CHROME_PUBLISHER_ID: ${{ secrets.CHROME_PUBLISHER_ID }}
+          CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL: ${{ secrets.CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL }}
+          CHROME_SERVICE_ACCOUNT_PRIVATE_KEY: ${{ secrets.CHROME_SERVICE_ACCOUNT_PRIVATE_KEY }}
+          ZIP: ${{ steps.version.outputs.zip }}
+        run: >
+          pnpm --filter @handsift/extension exec wxt submit
+          --chrome-api-version v2
+          --chrome-zip "$GITHUB_WORKSPACE/$ZIP"
+          --chrome-extension-id "$CHROME_EXTENSION_ID"
+          --chrome-publisher-id "$CHROME_PUBLISHER_ID"
+          --chrome-service-account-client-email "$CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL"
+          --chrome-service-account-private-key "$CHROME_SERVICE_ACCOUNT_PRIVATE_KEY"
+
+      - name: Store submission skipped
+        if: env.CHROME_EXTENSION_ID == ''
+        run: echo "::notice::CHROME_EXTENSION_ID is not set; upload ${{ steps.version.outputs.zip }} from the GitHub Release to the Chrome Web Store by hand."
