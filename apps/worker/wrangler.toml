@@ -76,8 +76,9 @@ enabled = true
 required = ["ETSY_API_KEY"]
 
 [env.production.vars]
-# Set to the Chrome Web Store extension ID once it exists (Phase 12).
-ALLOWED_EXTENSION_IDS = ""
+# HandSift's Chrome Web Store ID (assigned at the first upload, Oct 22, 2026). Only filters
+# casual misuse; per-IP rate limiting is the real defense (see middleware/origin.ts).
+ALLOWED_EXTENSION_IDS = "giefmpdfjocaghgeneiambmncmlkojjd"
 
 [[env.production.ratelimits]]
 name = "RATE_LIMITER"

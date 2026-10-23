@@ -410,6 +410,8 @@ From Etsy's API Terms of Use (last updated Aug 18, 2026). Record details and any
 
 First release only: the store has no listing yet, so upload the zip from the GitHub Release by hand in the Chrome Web Store dashboard. That assigns the permanent extension ID. Then set the `CHROME_*` secrets below, and set `ALLOWED_EXTENSION_IDS` in `wrangler.toml` (production) to that ID.
 
+Done for v0.1.0 (Oct 22, 2026): uploaded and submitted for review by hand. Extension ID **`giefmpdfjocaghgeneiambmncmlkojjd`**, now in `ALLOWED_EXTENSION_IDS` (takes effect at the next production deploy). `CHROME_*` secrets not set yet.
+
 ### GitHub secrets
 - `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`
 - `CHROME_EXTENSION_ID`, `CHROME_PUBLISHER_ID`, `CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL`, `CHROME_SERVICE_ACCOUNT_PRIVATE_KEY` (Chrome Web Store API v2; the older client ID / refresh token flow is deprecated)
