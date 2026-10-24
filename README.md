@@ -11,8 +11,9 @@ listings in search results and shop pages, and always shows its reasons.
 
 [![CI](https://github.com/Djang27/HandSift/actions/workflows/ci.yml/badge.svg)](https://github.com/Djang27/HandSift/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/Djang27/HandSift?label=release)](https://github.com/Djang27/HandSift/releases)
-![Chrome Web Store: in review](https://img.shields.io/badge/Chrome_Web_Store-in_review-0f766e)
+[![Chrome Web Store](https://img.shields.io/chrome-web-store/v/giefmpdfjocaghgeneiambmncmlkojjd?label=Chrome%20Web%20Store&color=0f766e)](https://chromewebstore.google.com/detail/handsift-ai-filter-for-et/giefmpdfjocaghgeneiambmncmlkojjd)
 
+[**Install**](https://chromewebstore.google.com/detail/handsift-ai-filter-for-et/giefmpdfjocaghgeneiambmncmlkojjd) ·
 [Website](https://djang27.github.io/HandSift/) ·
 [Privacy policy](https://djang27.github.io/HandSift/privacy.html) ·
 [Terms](https://djang27.github.io/HandSift/terms.html) ·
@@ -43,8 +44,10 @@ listings in search results and shop pages, and always shows its reasons.
 
 ## Install
 
-HandSift is **in review on the Chrome Web Store**. The install link will be here once it's live.
-Release builds only work when installed from the store (the API accepts HandSift's store ID).
+**[Add HandSift to Chrome from the Chrome Web Store](https://chromewebstore.google.com/detail/handsift-ai-filter-for-et/giefmpdfjocaghgeneiambmncmlkojjd)** (free).
+
+After installing, a welcome page explains what HandSift sends and asks you to accept the terms.
+Then open any Etsy search or shop page. Pin HandSift to your toolbar to change its settings.
 
 ## How accurate is it?
 

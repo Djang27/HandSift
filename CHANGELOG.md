@@ -4,7 +4,7 @@ All notable changes to HandSift. Versions match the extension's version and the 
 
 ## 0.1.0 (October 22, 2026)
 
-First release, submitted to the Chrome Web Store.
+First release. Published on the [Chrome Web Store](https://chromewebstore.google.com/detail/handsift-ai-filter-for-et/giefmpdfjocaghgeneiambmncmlkojjd) on October 23, 2026.
 
 - Labels Etsy listings on search and shop pages: **AI · disclosed** when the seller's own text
   says AI was used, **Likely AI** when several clues add up. Every label explains why.
