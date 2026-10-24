@@ -556,9 +556,9 @@ Each is its own `SignalModule` file.
 - Display Etsy's required notice prominently in the popup and store listing: "The term 'Etsy' is a trademark of Etsy, Inc. This Application uses Etsy's API, but is not endorsed or certified by Etsy." Follow Etsy's Trademark Policy for any use of the name; never use Etsy's logo or brand styling.
 - **Manual step for me:** Chrome Web Store developer account, first manual upload for the extension ID, CWS API credentials into GitHub secrets.
 - `release.yml`, tested with a `v0.1.0` tag.
-  - Written (Oct 22, 2026); extension version bumped to 0.1.0. Not yet run: the first `v0.1.0` tag is its test.
+  - Done: `v0.1.0` tagged Oct 22, 2026. CI, production Worker deploy + `/health`, and the GitHub Release all passed; store submission skipped (no credentials yet), so the zip was uploaded by hand. **Published on the Chrome Web Store Oct 23, 2026:** https://chromewebstore.google.com/detail/handsift-ai-filter-for-et/giefmpdfjocaghgeneiambmncmlkojjd
 - Store listing: privacy policy (only listing IDs sent to our Worker, forwarded to Etsy; IP addresses used transiently for rate limiting and never logged or stored), permission justifications, screenshots, README with honest accuracy notes.
-  - Done: `store/listing.md` (paste-ready dashboard text) and `store/images/` (three 1280×800 screenshots of the real extension on a neutral demo page, never real Etsy pages or sellers' photos; 440×280 promo tile). README still to do.
+  - Done: `store/listing.md` (paste-ready dashboard text) and `store/images/` (three 1280×800 screenshots of the real extension on a neutral demo page, never real Etsy pages or sellers' photos; 440×280 promo tile). `README.md` (product page: features, screenshots, honest accuracy, how it works, development) and `CHANGELOG.md` done Oct 22, 2026; store badge, install link, and the site's install button added when the listing went live.
 - **Done when:** a tag deploys production Worker, creates a GitHub Release, submits the extension.
 
 ---
